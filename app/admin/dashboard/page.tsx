@@ -1,0 +1,41 @@
+import { createServiceClient } from '@/lib/supabase/server'
+import { DashboardClient } from './DashboardClient'
+
+export const dynamic = 'force-dynamic'
+
+export default async function DashboardPage() {
+  const supabase = createServiceClient()
+
+  const [bookingsResult, slotsResult, activitiesResult] = await Promise.all([
+    supabase.from('bookings').select('*, slot:slots(*), activity:activities(*)').order('created_at', { ascending: false }),
+    supabase.from('slots').select('*').eq('is_break', false),
+    supabase.from('activities').select('*'),
+  ])
+
+  const bookings = bookingsResult.data || []
+  const slots = slotsResult.data || []
+  const activities = activitiesResult.data || []
+
+  const totalRevenue = bookings
+    .filter(b => b.payment_status !== 'cancelled')
+    .reduce((sum, b) => sum + (b.amount_paid || 0), 0)
+
+  const totalSlots = slots.reduce((sum, s) => sum + s.capacity, 0)
+  const totalBooked = slots.reduce((sum, s) => sum + s.booked_count, 0)
+
+  const kpis = {
+    totalBookings: bookings.filter(b => b.payment_status !== 'cancelled').length,
+    revenue: totalRevenue,
+    availableSlots: totalSlots - totalBooked,
+    checkins: bookings.filter(b => b.checked_in).length,
+  }
+
+  return (
+    <DashboardClient
+      kpis={kpis}
+      recentBookings={bookings.slice(0, 10)}
+      bookings={bookings}
+      activities={activities}
+    />
+  )
+}
