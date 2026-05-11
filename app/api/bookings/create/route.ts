@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { getSumUpCheckout, isSumUpPaymentSuccessful } from '@/lib/sumup'
 import { generateTicketCode } from '@/lib/utils'
-import { resend, FROM_EMAIL } from '@/lib/resend'
+import { getResend, FROM_EMAIL } from '@/lib/resend'
 import { BookingConfirmationEmail } from '@/emails/BookingConfirmation'
 import type { ActivityName } from '@/lib/supabase/types'
 
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
           .eq('id', activityId)
           .single()
 
-        await resend.emails.send({
+        await getResend().emails.send({
           from: FROM_EMAIL,
           to: email,
           subject: `Votre ticket EasyDrift - ${activity?.label}`,

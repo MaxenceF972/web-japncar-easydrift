@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { resend, FROM_EMAIL } from '@/lib/resend'
+import { getResend, FROM_EMAIL } from '@/lib/resend'
 import { BookingConfirmationEmail } from '@/emails/BookingConfirmation'
 
 export async function POST(req: NextRequest) {
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
     if (!booking) return NextResponse.json({ error: 'Réservation introuvable' }, { status: 404 })
 
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM_EMAIL,
       to: booking.email,
       subject: `Votre ticket EasyDrift - ${booking.activity?.label}`,
