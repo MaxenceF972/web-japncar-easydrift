@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       booked_by_admin,
     } = body
 
-    const supabase = createServiceClient()
+    const supabase = createServiceClient() as any
 
     let paymentStatus: 'paid' | 'cash' | 'free' | 'pending' = 'pending'
     let amountPaid: number | null = null

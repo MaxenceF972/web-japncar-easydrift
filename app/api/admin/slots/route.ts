@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Données manquantes' }, { status: 400 })
   }
 
-  const supabase = createServiceClient()
+  const supabase = createServiceClient() as any
   const { data, error } = await supabase
     .from('slots')
     .insert({ activity_id, day, start_time, end_time, capacity, is_break: false })
@@ -36,7 +36,7 @@ export async function DELETE(req: NextRequest) {
   const { slotId } = await req.json()
   if (!slotId) return NextResponse.json({ error: 'ID manquant' }, { status: 400 })
 
-  const supabase = createServiceClient()
+  const supabase = createServiceClient() as any
 
   // Vérifier qu'il n'y a pas de réservations actives
   const { data: bookings } = await supabase

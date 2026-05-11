@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Données manquantes' }, { status: 400 })
     }
 
-    const supabase = createServiceClient()
+    const supabase = createServiceClient() as any
 
     // Vérifier disponibilité du slot
     const { data: slot } = await supabase

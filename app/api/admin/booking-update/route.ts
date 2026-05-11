@@ -12,7 +12,7 @@ export async function PATCH(req: NextRequest) {
     const { bookingId, ...updates } = await req.json()
     if (!bookingId) return NextResponse.json({ error: 'ID manquant' }, { status: 400 })
 
-    const supabase = createServiceClient()
+    const supabase = createServiceClient() as any
     const { data, error } = await supabase
       .from('bookings')
       .update(updates)

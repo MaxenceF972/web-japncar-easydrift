@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   try {
     const { bookingId } = await req.json()
 
-    const supabase = createServiceClient()
+    const supabase = createServiceClient() as any
 
     const { data: booking } = await supabase
       .from('bookings')

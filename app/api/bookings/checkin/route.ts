@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Code ticket manquant' }, { status: 400 })
     }
 
-    const supabase = createServiceClient()
+    const supabase = createServiceClient() as any
 
     const { data: booking } = await supabase
       .from('bookings')
