@@ -1,8 +1,7 @@
 import {
   Body, Container, Head, Html, Img, Preview,
-  Row, Column, Section, Text, Hr, Button,
+  Row, Column, Section, Text, Hr,
 } from '@react-email/components'
-import { QRCodeSVG } from 'qrcode.react'
 import { formatTime, formatDate } from '@/lib/utils'
 
 interface Props {
@@ -22,6 +21,8 @@ export function BookingConfirmationEmail({
   ticketCode, appUrl, bookingId,
 }: Props) {
   const confirmationUrl = `${appUrl}/confirmation/${bookingId}`
+  const qrData = `${appUrl}/admin/scanner?code=${ticketCode}`
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}&bgcolor=ffffff&color=000000&margin=10`
 
   return (
     <Html lang="fr">
@@ -32,7 +33,12 @@ export function BookingConfirmationEmail({
 
           {/* Header */}
           <Section style={header}>
-            <Text style={logoText}>EASY<span style={{ color: '#F47B20' }}>DRIFT</span></Text>
+            <Img
+              src={`${appUrl}/logo-easydrift.png`}
+              alt="EasyDrift"
+              width="160"
+              style={{ margin: '0 auto', display: 'block' }}
+            />
             <Text style={subTitle}>JAPN Car à Montlhéry</Text>
           </Section>
 
@@ -78,26 +84,32 @@ export function BookingConfirmationEmail({
           {/* QR Code */}
           <Section style={{ ...section, textAlign: 'center' as const }}>
             <Text style={label}>VOTRE QR CODE D'ENTRÉE</Text>
-            <a href={confirmationUrl}>
-              <Img
-                src={`${appUrl}/api/tickets/qr?code=${ticketCode}`}
-                alt="QR Code"
-                width="180"
-                height="180"
-                style={{ margin: '0 auto', borderRadius: '12px' }}
-              />
-            </a>
+            <Img
+              src={qrImageUrl}
+              alt="QR Code"
+              width="180"
+              height="180"
+              style={{ margin: '0 auto', borderRadius: '12px', display: 'block' }}
+            />
             <Text style={ticketCodeStyle}>{ticketCode}</Text>
             <Text style={hint_text}>Présentez ce QR code à l'entrée</Text>
           </Section>
 
           <Hr style={hr} />
 
-          {/* CTA */}
+          {/* CTA — table-based button for maximum email client compatibility */}
           <Section style={{ ...section, textAlign: 'center' as const }}>
-            <Button href={confirmationUrl} style={cta_button}>
-              Voir mon ticket en ligne
-            </Button>
+            <table width="100%" cellPadding="0" cellSpacing="0" role="presentation">
+              <tbody>
+                <tr>
+                  <td align="center">
+                    <a href={confirmationUrl} style={cta_button}>
+                      Voir mon ticket en ligne
+                    </a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </Section>
 
           <Hr style={hr} />
@@ -107,7 +119,7 @@ export function BookingConfirmationEmail({
             <Text style={label}>INFORMATIONS PRATIQUES</Text>
             <Text style={body_text}>📍 Circuit de Montlhéry, 91310 Linas</Text>
             <Text style={body_text}>🚗 Parking gratuit sur place</Text>
-            <Text style={body_text}>⏰ Présentez-vous 10 minutes avant votre créneau</Text>
+            <Text style={body_text}>⏰ Présentez-vous 20 minutes avant votre créneau</Text>
             <Text style={body_text}>📱 Votre QR code sera scanné à l'entrée</Text>
           </Section>
 
@@ -145,18 +157,10 @@ const header: React.CSSProperties = {
   borderBottom: '1px solid #222222',
 }
 
-const logoText: React.CSSProperties = {
-  fontFamily: '"Bebas Neue", Arial Black, sans-serif',
-  fontSize: '36px',
-  color: '#F5F5F5',
-  margin: 0,
-  letterSpacing: '0.05em',
-}
-
 const subTitle: React.CSSProperties = {
   color: '#888888',
   fontSize: '13px',
-  margin: '4px 0 0',
+  margin: '8px 0 0',
 }
 
 const section: React.CSSProperties = {
@@ -224,7 +228,8 @@ const cta_button: React.CSSProperties = {
   fontWeight: '600',
   textDecoration: 'none',
   display: 'inline-block',
-}
+  msoHide: 'all',
+} as React.CSSProperties
 
 const hr: React.CSSProperties = {
   borderColor: '#222222',
