@@ -15,8 +15,6 @@ export function StatsClient({ bookings, activities, slots }: Props) {
   const totalRevenue = useMemo(() =>
     bookings.reduce((sum, b) => sum + (b.amount_paid || 0), 0), [bookings])
 
-  const myShare = Math.round(totalRevenue * 0.2)
-
   const byActivity = useMemo(() =>
     activities.map(a => {
       const abs = bookings.filter(b => b.activity_id === a.id)
@@ -58,7 +56,6 @@ export function StatsClient({ bookings, activities, slots }: Props) {
       <div className="grid grid-cols-2 gap-3 mb-6">
         {[
           { label: 'CA Total', value: formatPrice(totalRevenue), sub: 'TTC' },
-          { label: 'Ta part (20%)', value: formatPrice(myShare), sub: 'Net estimé' },
           { label: 'Taux de remplissage', value: `${fillRate}%`, sub: 'Global' },
           { label: 'Total réservations', value: bookings.length, sub: 'Confirmées' },
         ].map(({ label, value, sub }, i) => (

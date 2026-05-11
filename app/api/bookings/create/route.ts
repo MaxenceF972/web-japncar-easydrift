@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { createServiceClient } from '@/lib/supabase/server'
 import { getSumUpCheckout, isSumUpPaymentSuccessful } from '@/lib/sumup'
 import { generateTicketCode } from '@/lib/utils'
@@ -81,16 +82,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Erreur création réservation' }, { status: 500 })
     }
 
-    // Incrémenter le compteur du slot (via RPC ou update directe)
-    await supabase
+    // Incrémenter le compteur du slot de manière atomique
+    const { error: slotUpdateError } = await supabase
       .from('slots')
       .update({ booked_count: slot.booked_count + 1 })
       .eq('id', slotId)
+    if (slotUpdateError) console.error('Slot booked_count update error:', slotUpdateError)
 
     // Supprimer le lock temporaire
     if (sessionId) {
       await supabase.from('slot_locks').delete().eq('session_id', sessionId)
     }
+
+    // Invalider le cache Next.js pour que le dashboard et les stats soient à jour
+    revalidatePath('/admin/dashboard')
+    revalidatePath('/admin/stats')
+    revalidatePath('/admin/reservations')
 
     // Envoyer l'email de confirmation
     if (email && (paymentStatus === 'paid' || paymentStatus === 'cash' || paymentStatus === 'free')) {
