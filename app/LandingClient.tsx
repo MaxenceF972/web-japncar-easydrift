@@ -100,8 +100,8 @@ export function LandingClient({ activities }: Props) {
           <img
             src="/logo-easydrift.png"
             alt="EasyDrift"
-            className="h-20 w-auto mx-auto mb-2"
-            style={{ filter: 'drop-shadow(0 0 20px rgba(244,123,32,0.4))' }}
+            className="mx-auto mb-2"
+            style={{ height: '80px', width: 'auto', filter: 'drop-shadow(0 0 20px rgba(244,123,32,0.4))' }}
           />
           <p className="font-bebas text-2xl text-[var(--text-secondary)] mb-2 tracking-widest">
             JAPN CAR
