@@ -17,7 +17,7 @@ interface Draft {
 }
 
 const ACTIVITY_LABELS: Record<ActivityName, string> = {
-  bapteme: 'Baptême Drift',
+  bapteme: 'Baptême EASYDRIFT',
   conduite: 'Session Conduite',
   carbooling: 'Car Booling CLIO',
 }

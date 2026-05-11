@@ -3,11 +3,11 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'EasyDrift | JAPN Car à Montlhéry',
-  description: 'Réservez votre expérience drift et conduite sportive au circuit de Montlhéry. Baptême drift, session conduite, car booling.',
-  keywords: 'drift, conduite sportive, montlhéry, JAPN Car, EasyDrift, réservation',
+  description: 'Réservez votre expérience EASYDRIFT et conduite sportive au circuit de Montlhéry. Baptême EASYDRIFT, session conduite, car booling.',
+  keywords: 'dérive, conduite sportive, montlhéry, JAPN Car, EasyDrift, réservation',
   openGraph: {
     title: 'EasyDrift JAPN Car',
-    description: 'Vivez l\'adrénaline du drift au circuit de Montlhéry',
+    description: 'Vivez l\'adrénaline de la dérive au circuit de Montlhéry',
     type: 'website',
   },
 }

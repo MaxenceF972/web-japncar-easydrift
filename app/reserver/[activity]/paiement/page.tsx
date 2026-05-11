@@ -8,7 +8,7 @@ import { formatTime, formatPrice, getDayLabel } from '@/lib/utils'
 import type { ActivityName } from '@/lib/supabase/types'
 
 const ACTIVITY_LABELS: Record<ActivityName, string> = {
-  bapteme: 'Baptême Drift',
+  bapteme: 'Baptême EASYDRIFT',
   conduite: 'Session Conduite',
   carbooling: 'Car Booling CLIO',
 }
