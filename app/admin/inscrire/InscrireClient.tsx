@@ -239,7 +239,11 @@ export function InscrireClient({ activities }: Props) {
                 />
               </div>
             </div>
-            <p className="text-[var(--text-secondary)] text-sm">
+            <p className="font-semibold text-[var(--text-primary)] text-sm mt-3">{selectedActivity?.label}</p>
+            <p className="text-[var(--text-secondary)] text-sm mt-0.5">
+              {selectedSlot && `${formatTime(selectedSlot.start_time)} — ${formatTime(selectedSlot.end_time)}`}
+            </p>
+            <p className="text-[var(--text-secondary)] text-sm mt-3">
               Le client peut photographier ce QR code
             </p>
             {form.email && (
