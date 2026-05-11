@@ -144,7 +144,7 @@ export function LandingClient({ activities }: Props) {
             Choisissez votre <span className="text-[var(--accent)]">expérience</span>
           </h2>
           <p className="text-[var(--text-secondary)] text-sm mt-1">
-            3 activités disponibles pour vivre l'adrénaline du drift
+            3 activités disponibles pour vivre l'adrénaline de la dérive
           </p>
         </div>
 
