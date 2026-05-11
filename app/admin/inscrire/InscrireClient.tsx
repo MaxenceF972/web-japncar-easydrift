@@ -8,9 +8,9 @@ import type { Activity, Slot } from '@/lib/supabase/types'
 import { SlotPicker } from '@/components/client/SlotPicker'
 import { formatTime, formatPrice, getDayLabel } from '@/lib/utils'
 import { QRCodeSVG } from 'qrcode.react'
+import { EVENT_DAYS } from '@/lib/event-config'
 
 const ICONS = { bapteme: Zap, conduite: Car, carbooling: Wind }
-const EVENT_DAYS = { saturday: '2026-05-30', sunday: '2026-05-31' }
 
 type Step = 1 | 2 | 3 | 'done'
 

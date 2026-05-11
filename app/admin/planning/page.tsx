@@ -1,13 +1,8 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { PlanningClient } from './PlanningClient'
+import { EVENT_DAYS } from '@/lib/event-config'
 
 export const dynamic = 'force-dynamic'
-
-// Dates de l'événement
-const EVENT_DAYS = {
-  saturday: '2026-05-30',
-  sunday: '2026-05-31',
-}
 
 export default async function PlanningPage() {
   const supabase = createServiceClient()

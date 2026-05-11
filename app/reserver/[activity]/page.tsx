@@ -2,15 +2,10 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { SlotChooserClient } from './SlotChooserClient'
 import type { ActivityName } from '@/lib/supabase/types'
+import { EVENT_DAYS } from '@/lib/event-config'
 
 interface Props {
   params: { activity: ActivityName }
-}
-
-// Dates de l'événement — à adapter
-const EVENT_DAYS = {
-  saturday: '2026-05-30',
-  sunday: '2026-05-31',
 }
 
 export default async function ReserverPage({ params }: Props) {
