@@ -12,6 +12,9 @@ export default async function DashboardPage() {
     supabase.from('activities').select('*'),
   ])
 
+  if (bookingsResult.error) console.error('Dashboard bookings error:', bookingsResult.error)
+  if (slotsResult.error) console.error('Dashboard slots error:', slotsResult.error)
+
   const bookings = (bookingsResult.data || []) as any[]
   const slots = (slotsResult.data || []) as any[]
   const activities = (activitiesResult.data || []) as any[]
