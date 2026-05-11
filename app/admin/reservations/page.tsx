@@ -11,5 +11,5 @@ export default async function ReservationsPage() {
     .select(`*, slot:slots(*), activity:activities(*)`)
     .order('created_at', { ascending: false })
 
-  return <ReservationsClient bookings={bookings || []} />
+  return <ReservationsClient bookings={(bookings || []) as any[]} />
 }

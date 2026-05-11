@@ -14,9 +14,9 @@ export default async function StatsPage() {
 
   return (
     <StatsClient
-      bookings={bookingsResult.data || []}
-      activities={activitiesResult.data || []}
-      slots={slotsResult.data || []}
+      bookings={(bookingsResult.data || []) as any[]}
+      activities={(activitiesResult.data || []) as any[]}
+      slots={(slotsResult.data || []) as any[]}
     />
   )
 }

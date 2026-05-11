@@ -12,9 +12,9 @@ export default async function DashboardPage() {
     supabase.from('activities').select('*'),
   ])
 
-  const bookings = bookingsResult.data || []
-  const slots = slotsResult.data || []
-  const activities = activitiesResult.data || []
+  const bookings = (bookingsResult.data || []) as any[]
+  const slots = (slotsResult.data || []) as any[]
+  const activities = (activitiesResult.data || []) as any[]
 
   const totalRevenue = bookings
     .filter(b => b.payment_status !== 'cancelled')

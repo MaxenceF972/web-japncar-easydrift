@@ -25,8 +25,8 @@ export function StatsClient({ bookings, activities, slots }: Props) {
     }), [bookings, activities])
 
   const bySatSun = useMemo(() => {
-    const sat = bookings.filter(b => (b as any).slot?.day === '2025-09-13').length
-    const sun = bookings.filter(b => (b as any).slot?.day === '2025-09-14').length
+    const sat = bookings.filter(b => (b as any).slot?.day === '2026-05-30').length
+    const sun = bookings.filter(b => (b as any).slot?.day === '2026-05-31').length
     return [
       { name: 'Samedi', value: sat },
       { name: 'Dimanche', value: sun },
