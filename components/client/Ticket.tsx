@@ -103,6 +103,13 @@ export function Ticket({ booking }: TicketProps) {
           <p className="text-[var(--text-secondary)] text-xs mt-1">
             Présentez ce QR code à l'entrée
           </p>
+
+          <div className="mt-4 text-center">
+            <p className="font-semibold text-[var(--text-primary)] text-sm">{booking.activity.label}</p>
+            <p className="text-[var(--text-secondary)] text-sm mt-0.5">
+              {formatTime(booking.slot.start_time)} — {formatTime(booking.slot.end_time)}
+            </p>
+          </div>
         </div>
 
         {/* Footer */}
