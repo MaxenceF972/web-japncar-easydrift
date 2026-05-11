@@ -8,7 +8,7 @@ interface Props {
 }
 
 // Dates de l'événement — à adapter
-export const EVENT_DAYS = {
+const EVENT_DAYS = {
   saturday: '2026-05-30',
   sunday: '2026-05-31',
 }
