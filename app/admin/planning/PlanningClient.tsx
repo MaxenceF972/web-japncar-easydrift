@@ -131,8 +131,9 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
   async function handleSavePrice() {
     if (!editingActivity) return
     setSaveError('')
-    const price = parseFloat(priceValue)
-    if (isNaN(price) || price < 0) { setSaveError('Prix invalide'); return }
+    const euros = parseFloat(priceValue)
+    if (isNaN(euros) || euros < 0) { setSaveError('Prix invalide'); return }
+    const price = Math.round(euros * 100)
     setSaveLoading(true)
     const res = await fetch('/api/admin/activities', {
       method: 'PATCH',
@@ -191,7 +192,7 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
               {activity.label}
             </button>
             <button
-              onClick={() => { setEditingActivity(activity); setPriceValue(String(activity.price)); setSaveError('') }}
+              onClick={() => { setEditingActivity(activity); setPriceValue(String(activity.price / 100)); setSaveError('') }}
               className="w-6 h-6 rounded-md bg-[var(--bg-elevated)] border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent)] transition-colors"
               title={`Modifier le prix (${activity.price}€)`}
             >
@@ -402,16 +403,19 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
               <p className="text-[var(--text-secondary)] text-xs mb-4">{editingActivity.label}</p>
               <div className="space-y-3">
                 <div>
-                  <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Prix (€)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={priceValue}
-                    onChange={e => setPriceValue(e.target.value)}
-                    className="input-field w-full"
-                    autoFocus
-                  />
+                  <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Prix en euros (€)</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={priceValue}
+                      onChange={e => setPriceValue(e.target.value)}
+                      className="input-field w-full pr-8"
+                      autoFocus
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] text-sm">€</span>
+                  </div>
                 </div>
                 {saveError && <p className="text-red-400 text-xs">{saveError}</p>}
                 <button
