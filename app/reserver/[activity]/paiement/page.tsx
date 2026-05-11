@@ -110,7 +110,7 @@ export default function PaiementPage() {
 
   if (!draft) return null
 
-  const price = ACTIVITY_PRICES[draft.activityName]
+  const price = ACTIVITY_PRICES[draft.activityName as ActivityName]
 
   return (
     <main className="min-h-dvh pb-10">
@@ -134,7 +134,7 @@ export default function PaiementPage() {
           <div className="flex justify-between items-start">
             <div>
               <p className="font-semibold text-[var(--text-primary)]">
-                {ACTIVITY_LABELS[draft.activityName]}
+                {ACTIVITY_LABELS[draft.activityName as ActivityName]}
               </p>
               <p className="text-[var(--text-secondary)] text-sm">
                 {getDayLabel(draft.day)} · {formatTime(draft.startTime)}
