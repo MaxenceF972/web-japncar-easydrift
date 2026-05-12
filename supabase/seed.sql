@@ -39,87 +39,98 @@ SELECT id INTO v_carbooling_id FROM activities WHERE name = 'carbooling';
 
 -- ============================================================
 -- 2. Génération des créneaux BAPTÊME DRIFT
--- 3 voitures, 5 passagers, 7 min/cycle (5min session + 2min rotation)
--- Pause 15 min à chaque heure pile (HH:00 -> HH:15)
--- Matin : 09:00 -> dernier départ 11:45
--- Après-midi : 13:00 -> dernier départ 16:25
+-- 3 voitures, 5 passagers, 5 min session + 2 min rotation = 7 min/cycle
+-- Pauses calées sur le planning (après ~9 sessions)
+-- Matin : 20 sessions (09:00 → 11:41) — Après-midi : 24 sessions (13:00 → 16:20)
 -- ============================================================
 
 FOR v_day IN SELECT unnest(ARRAY[v_saturday, v_sunday]) LOOP
-  -- Matin
+
+  -- MATIN — Groupe 1 : 9 sessions
   v_current := '09:00';
-  WHILE v_current <= '11:45' LOOP
-    -- Vérifier si c'est une heure pile -> pause 15 min
-    IF extract(minute FROM v_current) = 0 AND v_current != '09:00' THEN
-      -- Insérer la pause visuelle
-      INSERT INTO slots (activity_id, day, start_time, end_time, capacity, is_break)
-      VALUES (v_bapteme_id, v_day, v_current, v_current + interval '15 minutes', 0, true);
-      v_current := v_current + interval '15 minutes';
-    END IF;
-
-    IF v_current > '11:45' THEN EXIT; END IF;
-
-    v_end := v_current + interval '7 minutes';
+  WHILE v_current <= '09:56' LOOP
     INSERT INTO slots (activity_id, day, start_time, end_time, capacity, is_break)
-    VALUES (v_bapteme_id, v_day, v_current, v_end, 5, false);
-    v_current := v_end;
+    VALUES (v_bapteme_id, v_day, v_current, v_current + interval '5 min', 5, false);
+    v_current := v_current + interval '7 min';
+  END LOOP;
+  INSERT INTO slots (activity_id, day, start_time, end_time, capacity, is_break)
+  VALUES (v_bapteme_id, v_day, '10:01', '10:15', 0, true);
 
-    -- Pause à l'heure pile (re-check après ajout)
-    IF extract(minute FROM v_current) = 0 AND v_current <= '11:45' THEN
-      INSERT INTO slots (activity_id, day, start_time, end_time, capacity, is_break)
-      VALUES (v_bapteme_id, v_day, v_current, v_current + interval '15 minutes', 0, true);
-      v_current := v_current + interval '15 minutes';
-    END IF;
+  -- MATIN — Groupe 2 : 7 sessions
+  v_current := '10:15';
+  WHILE v_current <= '10:57' LOOP
+    INSERT INTO slots (activity_id, day, start_time, end_time, capacity, is_break)
+    VALUES (v_bapteme_id, v_day, v_current, v_current + interval '5 min', 5, false);
+    v_current := v_current + interval '7 min';
+  END LOOP;
+  INSERT INTO slots (activity_id, day, start_time, end_time, capacity, is_break)
+  VALUES (v_bapteme_id, v_day, '11:02', '11:15', 0, true);
+
+  -- MATIN — Groupe 3 : 4 sessions
+  v_current := '11:15';
+  WHILE v_current <= '11:36' LOOP
+    INSERT INTO slots (activity_id, day, start_time, end_time, capacity, is_break)
+    VALUES (v_bapteme_id, v_day, v_current, v_current + interval '5 min', 5, false);
+    v_current := v_current + interval '7 min';
   END LOOP;
 
-  -- Après-midi
+  -- APRÈS-MIDI — Groupe 1 : 9 sessions
   v_current := '13:00';
-  WHILE v_current <= '16:25' LOOP
-    IF extract(minute FROM v_current) = 0 AND v_current != '13:00' THEN
-      INSERT INTO slots (activity_id, day, start_time, end_time, capacity, is_break)
-      VALUES (v_bapteme_id, v_day, v_current, v_current + interval '15 minutes', 0, true);
-      v_current := v_current + interval '15 minutes';
-    END IF;
-
-    IF v_current > '16:25' THEN EXIT; END IF;
-
-    v_end := v_current + interval '7 minutes';
+  WHILE v_current <= '13:56' LOOP
     INSERT INTO slots (activity_id, day, start_time, end_time, capacity, is_break)
-    VALUES (v_bapteme_id, v_day, v_current, v_end, 5, false);
-    v_current := v_end;
-
-    IF extract(minute FROM v_current) = 0 AND v_current <= '16:25' THEN
-      INSERT INTO slots (activity_id, day, start_time, end_time, capacity, is_break)
-      VALUES (v_bapteme_id, v_day, v_current, v_current + interval '15 minutes', 0, true);
-      v_current := v_current + interval '15 minutes';
-    END IF;
+    VALUES (v_bapteme_id, v_day, v_current, v_current + interval '5 min', 5, false);
+    v_current := v_current + interval '7 min';
   END LOOP;
+  INSERT INTO slots (activity_id, day, start_time, end_time, capacity, is_break)
+  VALUES (v_bapteme_id, v_day, '14:01', '14:15', 0, true);
+
+  -- APRÈS-MIDI — Groupe 2 : 7 sessions
+  v_current := '14:15';
+  WHILE v_current <= '14:57' LOOP
+    INSERT INTO slots (activity_id, day, start_time, end_time, capacity, is_break)
+    VALUES (v_bapteme_id, v_day, v_current, v_current + interval '5 min', 5, false);
+    v_current := v_current + interval '7 min';
+  END LOOP;
+  INSERT INTO slots (activity_id, day, start_time, end_time, capacity, is_break)
+  VALUES (v_bapteme_id, v_day, '15:02', '15:15', 0, true);
+
+  -- APRÈS-MIDI — Groupe 3 : 7 sessions
+  v_current := '15:15';
+  WHILE v_current <= '15:57' LOOP
+    INSERT INTO slots (activity_id, day, start_time, end_time, capacity, is_break)
+    VALUES (v_bapteme_id, v_day, v_current, v_current + interval '5 min', 5, false);
+    v_current := v_current + interval '7 min';
+  END LOOP;
+  INSERT INTO slots (activity_id, day, start_time, end_time, capacity, is_break)
+  VALUES (v_bapteme_id, v_day, '16:02', '16:15', 0, true);
+
+  -- APRÈS-MIDI — Groupe 4 : 1 session
+  INSERT INTO slots (activity_id, day, start_time, end_time, capacity, is_break)
+  VALUES (v_bapteme_id, v_day, '16:15', '16:20', 5, false);
+
 END LOOP;
 
 -- ============================================================
 -- 3. Génération des créneaux SESSION CONDUITE
 -- 2 voitures, 1 pilote, 6 min, rotation continue, pas de pause
--- Matin : 09:00 -> dernier départ 11:54
--- Après-midi : 13:00 -> dernier départ 16:24
+-- Matin : 27 passages (09:00 → 11:42) — Après-midi : 34 passages (13:00 → 16:24)
 -- ============================================================
 
 FOR v_day IN SELECT unnest(ARRAY[v_saturday, v_sunday]) LOOP
-  -- Matin
+  -- Matin (27 passages)
   v_current := '09:00';
-  WHILE v_current <= '11:54' LOOP
-    v_end := v_current + interval '6 minutes';
+  WHILE v_current < '11:42' LOOP
     INSERT INTO slots (activity_id, day, start_time, end_time, capacity, is_break)
-    VALUES (v_conduite_id, v_day, v_current, v_end, 1, false);
-    v_current := v_end;
+    VALUES (v_conduite_id, v_day, v_current, v_current + interval '6 min', 1, false);
+    v_current := v_current + interval '6 min';
   END LOOP;
 
-  -- Après-midi
+  -- Après-midi (34 passages)
   v_current := '13:00';
-  WHILE v_current <= '16:24' LOOP
-    v_end := v_current + interval '6 minutes';
+  WHILE v_current < '16:24' LOOP
     INSERT INTO slots (activity_id, day, start_time, end_time, capacity, is_break)
-    VALUES (v_conduite_id, v_day, v_current, v_end, 1, false);
-    v_current := v_end;
+    VALUES (v_conduite_id, v_day, v_current, v_current + interval '6 min', 1, false);
+    v_current := v_current + interval '6 min';
   END LOOP;
 END LOOP;
 
