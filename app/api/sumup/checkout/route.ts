@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     // Créer le checkout SumUp
     const checkout = await createSumUpCheckout({
       amount: price,
-      description: `EasyDrift ${activityName} - ${firstName} ${lastName}`,
+      description: `EASYDRIFT ${activityName} - ${firstName} ${lastName}`,
       reference,
       returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/sumup/webhook`,
     })

@@ -77,11 +77,11 @@ export function generateICSContent(booking: {
   return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//EasyDrift//JAPN Car//FR',
+    'PRODID:-//EASYDRIFT//JAPN Car//FR',
     'BEGIN:VEVENT',
     `DTSTART:${fmt(start)}`,
     `DTEND:${fmt(end)}`,
-    `SUMMARY:EasyDrift - ${booking.activity_label}`,
+    `SUMMARY:EASYDRIFT - ${booking.activity_label}`,
     `DESCRIPTION:${booking.first_name} ${booking.last_name} - Code: ${booking.ticket_code}`,
     'LOCATION:Circuit de Montlhéry\\, 91310 Linas',
     `UID:${booking.ticket_code}@easydrift-experience.com`,

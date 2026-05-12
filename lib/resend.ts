@@ -4,4 +4,4 @@ export function getResend() {
   return new Resend(process.env.RESEND_API_KEY || 'placeholder')
 }
 
-export const FROM_EMAIL = 'EasyDrift JAPN Car <tickets@easydrift-experience.com>'
+export const FROM_EMAIL = 'EASYDRIFT JAPN Car <tickets@easydrift-experience.com>'

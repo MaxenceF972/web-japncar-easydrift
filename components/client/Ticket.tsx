@@ -56,7 +56,7 @@ export function Ticket({ booking }: TicketProps) {
         <div className="p-5 border-b border-[var(--border)]">
           <div className="flex items-center justify-between">
             <div>
-              <img src="/logo-easydrift.png" alt="EasyDrift" className="h-8 w-auto mb-1" />
+              <img src="/logo-easydrift.png" alt="EASYDRIFT" className="h-8 w-auto mb-1" />
               <p className="text-[var(--text-secondary)] text-sm">JAPN Car à Montlhéry</p>
             </div>
             <CheckCircle size={28} className="text-green-500" />

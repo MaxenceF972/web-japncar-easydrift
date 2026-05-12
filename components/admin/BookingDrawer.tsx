@@ -61,7 +61,7 @@ export function BookingDrawer({ booking, onClose, onCheckin, onRefresh }: Props)
     const win = window.open('', '_blank', 'width=400,height=560')
     if (!win) return
     win.document.write(`<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Ticket EasyDrift</title>
+<html><head><meta charset="utf-8"><title>Ticket EASYDRIFT</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: Arial, sans-serif; background: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -78,7 +78,7 @@ export function BookingDrawer({ booking, onClose, onCheckin, onRefresh }: Props)
 </style>
 </head><body>
 <div class="ticket">
-  <p class="brand">EasyDrift</p>
+  <p class="brand">EASYDRIFT</p>
   <p class="event">JAPN CAR</p>
   <p class="date">30 · 31 MAI 2026 — MONTLHÉRY</p>
   <hr class="divider">

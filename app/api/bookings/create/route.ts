@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
         await getResend().emails.send({
           from: FROM_EMAIL,
           to: email,
-          subject: `Votre ticket EasyDrift - ${activity?.label}`,
+          subject: `Votre ticket EASYDRIFT - ${activity?.label}`,
           react: BookingConfirmationEmail({
             firstName,
             lastName,

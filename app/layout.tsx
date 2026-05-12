@@ -2,11 +2,11 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'EasyDrift | JAPN Car à Montlhéry',
+  title: 'EASYDRIFT | JAPN Car à Montlhéry',
   description: 'Réservez votre expérience EASYDRIFT et conduite sportive au circuit de Montlhéry. Baptême EASYDRIFT, session conduite, car booling.',
-  keywords: 'dérive, conduite sportive, montlhéry, JAPN Car, EasyDrift, réservation',
+  keywords: 'dérive, conduite sportive, montlhéry, JAPN Car, EASYDRIFT, réservation',
   openGraph: {
-    title: 'EasyDrift JAPN Car',
+    title: 'EASYDRIFT JAPN Car',
     description: 'Vivez l\'adrénaline de la dérive au circuit de Montlhéry',
     type: 'website',
   },

@@ -27,7 +27,7 @@ export function BookingConfirmationEmail({
   return (
     <Html lang="fr">
       <Head />
-      <Preview>Votre ticket EasyDrift — {activityLabel} — {ticketCode}</Preview>
+      <Preview>Votre ticket EASYDRIFT — {activityLabel} — {ticketCode}</Preview>
       <Body style={body}>
         <Container style={container}>
 
@@ -35,7 +35,7 @@ export function BookingConfirmationEmail({
           <Section style={header}>
             <Img
               src={`${appUrl}/logo-easydrift.png`}
-              alt="EasyDrift"
+              alt="EASYDRIFT"
               width="160"
               style={{ margin: '0 auto', display: 'block' }}
             />
@@ -125,7 +125,7 @@ export function BookingConfirmationEmail({
 
           {/* Footer */}
           <Section style={footer}>
-            <Text style={footer_text}>EasyDrift JAPN Car · maxence.fortier@easydriftdts.com</Text>
+            <Text style={footer_text}>EASYDRIFT JAPN Car · maxence.fortier@easydriftdts.com</Text>
             <Text style={footer_text}>En cas de problème, répondez à cet email.</Text>
           </Section>
         </Container>

@@ -47,7 +47,7 @@ export default function AdminLoginPage() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src="/logo-easydrift.png" alt="EasyDrift" className="h-12 w-auto mx-auto mb-2" />
+          <img src="/logo-easydrift.png" alt="EASYDRIFT" className="h-12 w-auto mx-auto mb-2" />
           <p className="text-[var(--text-secondary)] text-sm">Administration</p>
         </div>
 
