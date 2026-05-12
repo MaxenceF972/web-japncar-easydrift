@@ -104,7 +104,7 @@ export function LandingClient({ activities }: Props) {
             style={{ width: 'auto', height: 'auto', maxWidth: '260px', maxHeight: '70px', objectFit: 'contain', filter: 'drop-shadow(0 0 20px rgba(244,123,32,0.4))' }}
           />
           <p className="font-bebas text-2xl text-[var(--text-secondary)] mb-2 tracking-widest">
-            JAPN CAR
+            JAPN CAR <span className="text-[var(--text-secondary)] text-lg">· 30/31 Mai 2026</span>
           </p>
           <p className="flex items-center justify-center gap-1.5 text-[var(--text-secondary)] text-sm mb-8">
             <MapPin size={14} />
