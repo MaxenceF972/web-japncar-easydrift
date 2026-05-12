@@ -31,7 +31,7 @@ INSERT INTO activities (id, name, label, price, duration, color, description, ca
 VALUES
   (uuid_generate_v4(), 'bapteme',    'Baptême EASYDRIFT',    4000, 7,  '#F47B20', 'Montez à bord d''une voiture EASYDRIFT pilotée par un professionnel et vivez la sensation unique de la dérive !', 5),
   (uuid_generate_v4(), 'conduite',   'Session Conduite',     5000, 6,  '#E67E22', 'Prenez le volant et pilotez vous-même avec nos enveloppes EASYDRIFT sur un petit circuit sous la supervision de nos instructeurs.', 1),
-  (uuid_generate_v4(), 'carbooling', 'Car Booling CLIO',     2000, 4,  '#8E44AD', 'Découvrez les sensations d''un Car Booling lors de cette animation spéciale midi.', 1);
+  (uuid_generate_v4(), 'carbooling', 'Car Booling',     2000, 4,  '#8E44AD', 'Découvrez les sensations d''un Car Booling lors de cette animation spéciale midi.', 1);
 
 SELECT id INTO v_bapteme_id    FROM activities WHERE name = 'bapteme';
 SELECT id INTO v_conduite_id   FROM activities WHERE name = 'conduite';
