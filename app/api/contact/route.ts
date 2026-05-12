@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getResend, FROM_EMAIL } from '@/lib/resend'
+import { createServiceClient } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,24 +9,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Champs requis manquants' }, { status: 400 })
     }
 
-    await getResend().emails.send({
-      from: FROM_EMAIL,
-      to: 'maxence.fortier@easydriftdts.com',
-      reply_to: email,
-      subject: `[Contact JAPN Car] ${type === 'professionnel' ? '🏢' : '👤'} ${firstName} ${lastName}`,
-      html: `
-        <h2>Nouveau message de contact — EasyDrift JAPN Car</h2>
-        <table cellpadding="6">
-          <tr><td><strong>Nom</strong></td><td>${firstName} ${lastName}</td></tr>
-          <tr><td><strong>Email</strong></td><td>${email}</td></tr>
-          <tr><td><strong>Téléphone</strong></td><td>${phone || '—'}</td></tr>
-          <tr><td><strong>Type</strong></td><td>${type}</td></tr>
-        </table>
-        <hr/>
-        <p><strong>Message :</strong></p>
-        <p style="white-space:pre-wrap">${message}</p>
-      `,
+    const supabase = createServiceClient() as any
+
+    const { error } = await supabase.from('contacts').insert({
+      first_name: firstName,
+      last_name: lastName,
+      email: email.toLowerCase(),
+      phone: phone || null,
+      type,
+      message,
     })
+
+    if (error) {
+      console.error('Contact insert error:', error)
+      return NextResponse.json({ error: 'Erreur enregistrement' }, { status: 500 })
+    }
 
     return NextResponse.json({ success: true })
   } catch (e: any) {

@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Calendar, QrCode, List, UserPlus, BarChart3, LogOut } from 'lucide-react'
+import { LayoutDashboard, Calendar, QrCode, List, UserPlus, BarChart3, LogOut, MessageSquare } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const NAV_ITEMS = [
@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: '/admin/scanner',      icon: QrCode,          label: 'Scanner' },
   { href: '/admin/reservations', icon: List,            label: 'Réservations' },
   { href: '/admin/inscrire',     icon: UserPlus,        label: 'Inscrire' },
+  { href: '/admin/contacts',     icon: MessageSquare,   label: 'Contacts' },
   { href: '/admin/stats',        icon: BarChart3,       label: 'Stats' },
 ]
 
