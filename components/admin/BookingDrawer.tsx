@@ -1,7 +1,7 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Check, Mail, Phone, Banknote, Trash2, Loader2 } from 'lucide-react'
+import { X, Check, Mail, Phone, Banknote, Trash2, Loader2, Printer } from 'lucide-react'
 import { useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import type { Booking } from '@/lib/supabase/types'
@@ -47,6 +47,49 @@ export function BookingDrawer({ booking, onClose, onCheckin, onRefresh }: Props)
       body: JSON.stringify({ bookingId: booking.id }),
     })
     setLoading(null)
+  }
+
+  function handlePrint() {
+    if (!booking) return
+    const slot = (booking as any).slot
+    const activity = (booking as any).activity
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&ecc=H&data=${encodeURIComponent(`${process.env.NEXT_PUBLIC_APP_URL}/admin/scanner?code=${booking.ticket_code}`)}`
+    const slotLine = slot && activity
+      ? `${activity.label} &nbsp;·&nbsp; ${slot.day === 'saturday' ? 'Samedi' : 'Dimanche'} ${formatTime(slot.start_time)}`
+      : activity?.label || ''
+
+    const win = window.open('', '_blank', 'width=400,height=560')
+    if (!win) return
+    win.document.write(`<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Ticket EasyDrift</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+  .ticket { width: 340px; padding: 28px 24px 24px; border: 2px solid #111; border-radius: 16px; text-align: center; }
+  .brand { font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: #888; margin-bottom: 4px; }
+  .event { font-size: 22px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; color: #111; margin-bottom: 2px; }
+  .date { font-size: 11px; color: #888; letter-spacing: 2px; margin-bottom: 20px; }
+  .divider { border: none; border-top: 1px dashed #ccc; margin: 16px 0; }
+  .name { font-size: 26px; font-weight: 800; text-transform: uppercase; color: #111; margin-bottom: 4px; letter-spacing: 1px; }
+  .activity { font-size: 13px; color: #F47B20; font-weight: 600; margin-bottom: 16px; }
+  .qr { margin: 0 auto 16px; }
+  .code { font-size: 13px; letter-spacing: 3px; color: #555; font-family: monospace; }
+  @media print { body { margin: 0; } }
+</style>
+</head><body>
+<div class="ticket">
+  <p class="brand">EasyDrift</p>
+  <p class="event">JAPN CAR</p>
+  <p class="date">30 · 31 MAI 2026 — MONTLHÉRY</p>
+  <hr class="divider">
+  <p class="name">${booking.first_name} ${booking.last_name.toUpperCase()}</p>
+  ${slotLine ? `<p class="activity">${slotLine}</p>` : ''}
+  <img class="qr" src="${qrUrl}" width="200" height="200" alt="QR Code" />
+  <p class="code">${booking.ticket_code}</p>
+</div>
+<script>window.onload = function() { window.print() }<\/script>
+</body></html>`)
+    win.document.close()
   }
 
   async function handleCancel() {
@@ -178,6 +221,14 @@ export function BookingDrawer({ booking, onClose, onCheckin, onRefresh }: Props)
                     Marquer payé en cash
                   </button>
                 )}
+
+                <button
+                  onClick={handlePrint}
+                  className="btn-secondary w-full"
+                >
+                  <Printer size={16} />
+                  Imprimer le ticket
+                </button>
 
                 <button
                   onClick={handleSendEmail}
