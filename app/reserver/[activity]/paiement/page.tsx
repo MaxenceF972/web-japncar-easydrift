@@ -30,6 +30,7 @@ export default function PaiementPage() {
   const [loading, setLoading] = useState(true)
   const sumupContainerRef = useRef<HTMLDivElement>(null)
   const widgetMountedRef = useRef(false)
+  const successProcessingRef = useRef(false)
 
   useEffect(() => {
     const raw = sessionStorage.getItem('easydrift_booking_draft')
@@ -100,7 +101,8 @@ export default function PaiementPage() {
   async function handleSumUpResponse(type: string, body: any) {
     console.log('SumUp onResponse:', type, JSON.stringify(body))
     if (type === 'success') {
-      // Confirmer la réservation côté serveur
+      if (successProcessingRef.current) return
+      successProcessingRef.current = true
       try {
         const resp = await fetch('/api/bookings/create', {
           method: 'POST',
@@ -112,10 +114,13 @@ export default function PaiementPage() {
         sessionStorage.removeItem('easydrift_booking_draft')
         router.push(`/confirmation/${data.bookingId}`)
       } catch (e: any) {
+        successProcessingRef.current = false
         setError(`Paiement reçu mais erreur : ${e.message || 'inconnue'}. Contactez-nous.`)
       }
     } else if (type === 'error') {
-      setError('Le paiement a échoué. Veuillez réessayer.')
+      if (!successProcessingRef.current) {
+        setError('Le paiement a échoué. Veuillez réessayer.')
+      }
     }
   }
 
