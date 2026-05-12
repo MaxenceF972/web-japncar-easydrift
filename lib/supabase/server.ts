@@ -26,12 +26,17 @@ export function createClient() {
 }
 
 // Client de base (pas SSR) pour que la service_role key bypasse correctement RLS
+// cache: 'no-store' sur tous les fetch pour bypasser le Data Cache Next.js
 export function createServiceClient() {
   return createSupabaseClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     {
       auth: { autoRefreshToken: false, persistSession: false },
+      global: {
+        fetch: (url: RequestInfo | URL, init?: RequestInit) =>
+          fetch(url, { ...init, cache: 'no-store' }),
+      },
     }
   )
 }
