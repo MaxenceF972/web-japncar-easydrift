@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         if (attempt > 0) await new Promise(r => setTimeout(r, 3000))
         checkout = await getSumUpCheckout(checkoutId)
         if (isSumUpPaymentSuccessful(checkout)) break
-        console.log(`SumUp checkout attempt ${attempt + 1}: status=${checkout?.status}`)
+        console.log(`SumUp attempt ${attempt + 1}: status=${checkout?.status}, transactions=${JSON.stringify(checkout?.transactions)}`)
       }
       if (!checkout || !isSumUpPaymentSuccessful(checkout)) {
         return NextResponse.json({ error: 'Paiement non confirmé' }, { status: 402 })

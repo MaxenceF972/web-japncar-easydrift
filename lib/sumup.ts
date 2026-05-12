@@ -12,6 +12,12 @@ interface CreateCheckoutParams {
   returnUrl: string
 }
 
+interface SumUpTransaction {
+  id: string
+  status: string
+  payment_type?: string
+}
+
 interface SumUpCheckout {
   id: string
   checkout_reference: string
@@ -22,6 +28,7 @@ interface SumUpCheckout {
   merchant_code: string
   description: string
   redirect_url?: string
+  transactions?: SumUpTransaction[]
 }
 
 export async function createSumUpCheckout(params: CreateCheckoutParams): Promise<SumUpCheckout> {
@@ -60,5 +67,8 @@ export async function getSumUpCheckout(checkoutId: string): Promise<SumUpCheckou
 }
 
 export function isSumUpPaymentSuccessful(checkout: SumUpCheckout): boolean {
-  return checkout.status === 'PAID'
+  if (checkout.status === 'PAID') return true
+  // Après 3DS, la transaction peut être SUCCESSFUL avant que le checkout soit marqué PAID
+  if (checkout.transactions?.some(t => t.status === 'SUCCESSFUL')) return true
+  return false
 }
