@@ -97,7 +97,8 @@ export default function PaiementPage() {
     document.body.appendChild(script)
   }
 
-  async function handleSumUpResponse(type: string, _body: any) {
+  async function handleSumUpResponse(type: string, body: any) {
+    console.log('SumUp onResponse:', type, JSON.stringify(body))
     if (type === 'success') {
       // Confirmer la réservation côté serveur
       try {

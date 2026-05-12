@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
+
+export const maxDuration = 60
 import { createServiceClient } from '@/lib/supabase/server'
 import { getSumUpCheckout, isSumUpPaymentSuccessful } from '@/lib/sumup'
 import { generateTicketCode } from '@/lib/utils'
@@ -36,11 +38,14 @@ export async function POST(req: NextRequest) {
       paymentStatus = 'free'
       amountPaid = 0
     } else if (checkoutId) {
-      // Vérifier le paiement SumUp avec retry (3DS peut prendre plusieurs secondes)
+      // Délai initial : laisser SumUp synchroniser son API après confirmation widget
+      await new Promise(r => setTimeout(r, 4000))
+
       let checkout = null
-      for (let attempt = 0; attempt < 6; attempt++) {
-        if (attempt > 0) await new Promise(r => setTimeout(r, 3000))
+      for (let attempt = 0; attempt < 8; attempt++) {
+        if (attempt > 0) await new Promise(r => setTimeout(r, 4000))
         checkout = await getSumUpCheckout(checkoutId)
+        console.log(`SumUp poll attempt ${attempt}: status=${checkout?.status} txs=${JSON.stringify(checkout?.transactions?.map((t: any) => ({ status: t.status, type: t.payment_type })))}`)
         if (isSumUpPaymentSuccessful(checkout)) break
         // Arrêter immédiatement si le paiement est explicitement refusé
         const isFailed = checkout?.status === 'FAILED' ||
@@ -51,6 +56,7 @@ export async function POST(req: NextRequest) {
         const isFailed = checkout?.status === 'FAILED' ||
           checkout?.transactions?.some((t: any) => t.status === 'FAILED')
         const errorMsg = isFailed ? 'Paiement refusé par la banque' : 'Paiement non confirmé'
+        console.log(`SumUp final: ${errorMsg}, checkout=`, JSON.stringify(checkout))
         return NextResponse.json({ error: errorMsg }, { status: 402 })
       }
       paymentStatus = 'paid'
