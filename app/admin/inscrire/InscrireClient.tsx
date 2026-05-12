@@ -24,7 +24,7 @@ export function InscrireClient({ activities }: Props) {
   const [selectedDay, setSelectedDay] = useState<'saturday' | 'sunday'>('saturday')
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null)
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '' })
-  const [paymentMode, setPaymentMode] = useState<'cash' | 'free'>('cash')
+  const [paymentMode, setPaymentMode] = useState<'cash' | 'terminal' | 'free'>('cash')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<{ bookingId: string; ticketCode: string } | null>(null)
 
@@ -189,18 +189,22 @@ export function InscrireClient({ activities }: Props) {
           {/* Mode paiement */}
           <div>
             <label className="text-xs text-[var(--text-secondary)] block mb-2">Mode de paiement</label>
-            <div className="grid grid-cols-2 gap-2">
-              {(['cash', 'free'] as const).map(mode => (
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { key: 'cash',     label: '💵 Cash' },
+                { key: 'terminal', label: '💳 Terminal' },
+                { key: 'free',     label: '🎁 Gratuit' },
+              ] as const).map(({ key, label }) => (
                 <button
-                  key={mode}
-                  onClick={() => setPaymentMode(mode)}
+                  key={key}
+                  onClick={() => setPaymentMode(key)}
                   className={`py-2.5 rounded-xl text-sm font-medium border transition-colors ${
-                    paymentMode === mode
+                    paymentMode === key
                       ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
                       : 'bg-[var(--bg-elevated)] border-[var(--border)] text-[var(--text-secondary)]'
                   }`}
                 >
-                  {mode === 'cash' ? '💵 Cash / Terminal' : '🎁 Gratuit'}
+                  {label}
                 </button>
               ))}
             </div>

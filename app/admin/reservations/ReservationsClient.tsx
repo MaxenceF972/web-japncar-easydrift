@@ -7,10 +7,10 @@ import { formatTime, formatDate, formatPrice, getDayLabel } from '@/lib/utils'
 import { BookingDrawer } from '@/components/admin/BookingDrawer'
 
 const PAYMENT_LABELS: Record<string, string> = {
-  paid: 'Payé', cash: 'Cash', free: 'Gratuit', pending: 'En attente', cancelled: 'Annulé',
+  paid: 'En ligne', cash: 'Cash', terminal: 'Terminal', free: 'Gratuit', pending: 'En attente', cancelled: 'Annulé',
 }
 const PAYMENT_COLORS: Record<string, string> = {
-  paid: 'badge-green', cash: 'badge-purple', free: 'badge-gray', pending: 'badge-yellow', cancelled: 'badge-red',
+  paid: 'badge-green', cash: 'badge-purple', terminal: 'badge-yellow', free: 'badge-gray', pending: 'badge-red', cancelled: 'badge-red',
 }
 
 interface Props {
@@ -110,8 +110,10 @@ export function ReservationsClient({ bookings: initialBookings }: Props) {
             onChange={e => setFilterPayment(e.target.value)}
           >
             <option value="all">Tout statut paiement</option>
-            <option value="paid">Payé</option>
+            <option value="paid">En ligne</option>
             <option value="cash">Cash</option>
+            <option value="terminal">Terminal</option>
+            <option value="free">Gratuit</option>
             <option value="pending">En attente</option>
             <option value="cancelled">Annulé</option>
           </select>
@@ -135,34 +137,45 @@ export function ReservationsClient({ bookings: initialBookings }: Props) {
 
       {/* Liste */}
       <div className="space-y-2">
-        {filtered.map(booking => (
-          <button
-            key={booking.id}
-            onClick={() => setSelectedBooking(booking)}
-            className="w-full card p-4 text-left hover:border-[var(--accent)] transition-colors"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-semibold text-[var(--text-primary)] text-sm">
-                    {booking.first_name} {booking.last_name}
+        {filtered.map(booking => {
+          const slot = (booking as any).slot
+          const activity = (booking as any).activity
+          return (
+            <button
+              key={booking.id}
+              onClick={() => setSelectedBooking(booking)}
+              className="w-full card p-4 text-left hover:border-[var(--accent)] transition-colors"
+              style={activity?.color ? { borderLeft: `3px solid ${activity.color}` } : {}}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  {/* Nom */}
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-bold text-[var(--text-primary)] text-sm">
+                      {booking.first_name} {booking.last_name.toUpperCase()}
+                    </p>
+                    {booking.checked_in && (
+                      <span className="badge badge-green text-[10px] py-0">✓ Scanné</span>
+                    )}
+                  </div>
+                  {/* Activité */}
+                  <p className="font-semibold text-[var(--accent)] text-sm">
+                    {activity?.label || '—'}
                   </p>
-                  {booking.checked_in && (
-                    <span className="badge badge-green text-[10px] py-0">✓</span>
-                  )}
+                  {/* Jour + heure */}
+                  <p className="text-[var(--text-primary)] text-xs mt-0.5">
+                    {slot ? `${getDayLabel(slot.day)} · ${formatTime(slot.start_time)} — ${formatTime(slot.end_time)}` : '—'}
+                  </p>
+                  {/* Email */}
+                  <p className="text-[var(--text-secondary)] text-xs mt-0.5 truncate">{booking.email}</p>
                 </div>
-                <p className="text-[var(--text-secondary)] text-xs mt-0.5 truncate">
-                  {(booking as any).activity?.label} ·{' '}
-                  {(booking as any).slot ? getDayLabel((booking as any).slot.day) + ' ' + formatTime((booking as any).slot.start_time) : ''}
-                </p>
-                <p className="text-[var(--text-secondary)] text-xs truncate">{booking.email}</p>
+                <span className={`badge ${PAYMENT_COLORS[booking.payment_status]} flex-shrink-0 mt-0.5`}>
+                  {PAYMENT_LABELS[booking.payment_status]}
+                </span>
               </div>
-              <span className={`badge ${PAYMENT_COLORS[booking.payment_status]} flex-shrink-0`}>
-                {PAYMENT_LABELS[booking.payment_status]}
-              </span>
-            </div>
-          </button>
-        ))}
+            </button>
+          )
+        })}
         {filtered.length === 0 && (
           <p className="text-[var(--text-secondary)] text-sm text-center py-12">
             Aucune réservation trouvée

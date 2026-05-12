@@ -26,11 +26,11 @@ export async function POST(req: NextRequest) {
 
     const supabase = createServiceClient() as any
 
-    let paymentStatus: 'paid' | 'cash' | 'free' | 'pending' = 'pending'
+    let paymentStatus: 'paid' | 'cash' | 'terminal' | 'free' | 'pending' = 'pending'
     let amountPaid: number | null = null
 
-    if (paymentMode === 'cash') {
-      paymentStatus = 'cash'
+    if (paymentMode === 'cash' || paymentMode === 'terminal') {
+      paymentStatus = paymentMode
       amountPaid = PRICES[activityName as ActivityName]
     } else if (paymentMode === 'free') {
       paymentStatus = 'free'
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
     revalidatePath('/admin/reservations')
 
     // Envoyer l'email de confirmation
-    if (email && (paymentStatus === 'paid' || paymentStatus === 'cash' || paymentStatus === 'free')) {
+    if (email && (paymentStatus === 'paid' || paymentStatus === 'cash' || paymentStatus === 'terminal' || paymentStatus === 'free')) {
       try {
         const { data: activity } = await supabase
           .from('activities')
