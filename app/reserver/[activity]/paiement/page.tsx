@@ -29,6 +29,7 @@ export default function PaiementPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const sumupContainerRef = useRef<HTMLDivElement>(null)
+  const widgetMountedRef = useRef(false)
 
   useEffect(() => {
     const raw = sessionStorage.getItem('easydrift_booking_draft')
@@ -39,9 +40,17 @@ export default function PaiementPage() {
     createCheckout(d)
   }, [])
 
+  // Monter le widget uniquement après que le div soit rendu dans le DOM
+  useEffect(() => {
+    if (!checkoutId || loading || widgetMountedRef.current) return
+    widgetMountedRef.current = true
+    loadSumUpWidget(checkoutId)
+  }, [checkoutId, loading])
+
   async function createCheckout(d: any) {
     setLoading(true)
     setError(null)
+    widgetMountedRef.current = false
     try {
       const resp = await fetch('/api/sumup/checkout', {
         method: 'POST',
@@ -57,8 +66,6 @@ export default function PaiementPage() {
       const data = await resp.json()
       if (!resp.ok) throw new Error(data.error || 'Erreur lors de la création du paiement')
       setCheckoutId(data.checkoutId)
-      // Charger le widget SumUp
-      loadSumUpWidget(data.checkoutId)
     } catch (e: any) {
       setError(e.message)
     } finally {
@@ -67,16 +74,19 @@ export default function PaiementPage() {
   }
 
   function loadSumUpWidget(id: string) {
-    if (!sumupContainerRef.current) return
-    // Charger le script SumUp
+    // Supprimer l'ancien script si présent (retry)
+    const existing = document.getElementById('sumup-sdk')
+    if (existing) existing.remove()
+
     const script = document.createElement('script')
+    script.id = 'sumup-sdk'
     script.src = 'https://gateway.sumup.com/gateway/ecom/card/v2/sdk.js'
     script.async = true
     script.onload = () => {
       // @ts-ignore
       if (window.SumUpCard) {
         // @ts-ignore
-        const card = window.SumUpCard.mount({
+        window.SumUpCard.mount({
           id: 'sumup-card',
           checkoutId: id,
           onResponse: handleSumUpResponse,
@@ -87,7 +97,7 @@ export default function PaiementPage() {
     document.body.appendChild(script)
   }
 
-  async function handleSumUpResponse(type: string, body: any) {
+  async function handleSumUpResponse(type: string, _body: any) {
     if (type === 'success') {
       // Confirmer la réservation côté serveur
       try {
