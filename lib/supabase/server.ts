@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import type { Database } from './types'
 
@@ -24,12 +25,13 @@ export function createClient() {
   )
 }
 
+// Client de base (pas SSR) pour que la service_role key bypasse correctement RLS
 export function createServiceClient() {
-  return createServerClient<Database>(
+  return createSupabaseClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     {
-      cookies: { getAll: () => [], setAll: () => {} },
+      auth: { autoRefreshToken: false, persistSession: false },
     }
   )
 }
