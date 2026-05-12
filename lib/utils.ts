@@ -84,7 +84,7 @@ export function generateICSContent(booking: {
     `SUMMARY:EasyDrift - ${booking.activity_label}`,
     `DESCRIPTION:${booking.first_name} ${booking.last_name} - Code: ${booking.ticket_code}`,
     'LOCATION:Circuit de Montlhéry\\, 91310 Linas',
-    `UID:${booking.ticket_code}@easydrift-experience.fr`,
+    `UID:${booking.ticket_code}@easydrift-experience.com`,
     'END:VEVENT',
     'END:VCALENDAR',
   ].join('\r\n')
