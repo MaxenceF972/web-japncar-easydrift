@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { X, Check, Mail, Phone, Banknote, Trash2, Loader2 } from 'lucide-react'
 import { useState } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
 import type { Booking } from '@/lib/supabase/types'
 import { formatTime, formatDate, formatPrice } from '@/lib/utils'
 
@@ -136,6 +137,20 @@ export function BookingDrawer({ booking, onClose, onCheckin, onRefresh }: Props)
                   <p className="text-[var(--text-secondary)] text-sm mt-3">
                     Montant : <span className="text-[var(--text-primary)] font-semibold">{formatPrice(booking.amount_paid)}</span>
                   </p>
+                )}
+
+                {/* QR Code — client peut photographier si email non reçu */}
+                {booking.ticket_code && (
+                  <div className="mt-4 flex flex-col items-center gap-2">
+                    <div className="p-3 bg-white rounded-xl">
+                      <QRCodeSVG
+                        value={`${process.env.NEXT_PUBLIC_APP_URL}/admin/scanner?code=${booking.ticket_code}`}
+                        size={160}
+                        level="H"
+                      />
+                    </div>
+                    <p className="text-[var(--text-secondary)] text-xs">Le client peut photographier ce QR code</p>
+                  </div>
                 )}
               </div>
 
