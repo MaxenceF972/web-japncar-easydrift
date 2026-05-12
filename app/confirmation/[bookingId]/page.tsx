@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { Ticket } from '@/components/client/Ticket'
 import { CheckCircle } from 'lucide-react'
 
@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default async function ConfirmationPage({ params }: Props) {
-  const supabase = createClient()
+  const supabase = createServiceClient()
 
   const { data: booking } = await supabase
     .from('bookings')
