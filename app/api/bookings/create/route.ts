@@ -36,12 +36,13 @@ export async function POST(req: NextRequest) {
       paymentStatus = 'free'
       amountPaid = 0
     } else if (checkoutId) {
-      // Vérifier le paiement SumUp avec retry (SumUp peut mettre 1-2s à marquer PAID)
+      // Vérifier le paiement SumUp avec retry (3DS peut prendre plusieurs secondes)
       let checkout = null
-      for (let attempt = 0; attempt < 4; attempt++) {
-        if (attempt > 0) await new Promise(r => setTimeout(r, 1500))
+      for (let attempt = 0; attempt < 6; attempt++) {
+        if (attempt > 0) await new Promise(r => setTimeout(r, 3000))
         checkout = await getSumUpCheckout(checkoutId)
         if (isSumUpPaymentSuccessful(checkout)) break
+        console.log(`SumUp checkout attempt ${attempt + 1}: status=${checkout?.status}`)
       }
       if (!checkout || !isSumUpPaymentSuccessful(checkout)) {
         return NextResponse.json({ error: 'Paiement non confirmé' }, { status: 402 })
