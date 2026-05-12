@@ -42,10 +42,16 @@ export async function POST(req: NextRequest) {
         if (attempt > 0) await new Promise(r => setTimeout(r, 3000))
         checkout = await getSumUpCheckout(checkoutId)
         if (isSumUpPaymentSuccessful(checkout)) break
-        console.log(`SumUp attempt ${attempt + 1}: status=${checkout?.status}, transactions=${JSON.stringify(checkout?.transactions)}`)
+        // Arrêter immédiatement si le paiement est explicitement refusé
+        const isFailed = checkout?.status === 'FAILED' ||
+          checkout?.transactions?.some((t: any) => t.status === 'FAILED')
+        if (isFailed) break
       }
       if (!checkout || !isSumUpPaymentSuccessful(checkout)) {
-        return NextResponse.json({ error: 'Paiement non confirmé' }, { status: 402 })
+        const isFailed = checkout?.status === 'FAILED' ||
+          checkout?.transactions?.some((t: any) => t.status === 'FAILED')
+        const errorMsg = isFailed ? 'Paiement refusé par la banque' : 'Paiement non confirmé'
+        return NextResponse.json({ error: errorMsg }, { status: 402 })
       }
       paymentStatus = 'paid'
       amountPaid = PRICES[activityName as ActivityName]
