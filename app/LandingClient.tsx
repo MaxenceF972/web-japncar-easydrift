@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { ChevronDown, MapPin, Clock, Shield, Ticket } from 'lucide-react'
+import { ChevronDown, MapPin, Clock, Shield, Ticket, Send, Loader2, CheckCircle } from 'lucide-react'
 import type { Activity } from '@/lib/supabase/types'
 import { ActivityCard } from '@/components/client/ActivityCard'
 
@@ -57,6 +57,89 @@ const HOW_STEPS = [
   { icon: Clock, n: '03', title: 'Recevez', desc: 'Votre ticket avec QR code par email instantanément' },
   { icon: MapPin, n: '04', title: 'Profitez', desc: 'Présentez votre QR code à l\'entrée et vivez l\'expérience' },
 ]
+
+function ContactForm() {
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', type: 'particulier', message: '' })
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setStatus('loading')
+    try {
+      const resp = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!resp.ok) throw new Error()
+      setStatus('success')
+    } catch {
+      setStatus('error')
+    }
+  }
+
+  if (status === 'success') {
+    return (
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="card p-8 text-center">
+        <CheckCircle size={40} className="text-green-500 mx-auto mb-3" />
+        <p className="font-bebas text-xl text-[var(--text-primary)]">Message envoyé !</p>
+        <p className="text-[var(--text-secondary)] text-sm mt-1">Nous vous répondrons dans les plus brefs délais.</p>
+      </motion.div>
+    )
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs text-[var(--text-secondary)] block mb-1.5">Prénom *</label>
+          <input className="input-field" placeholder="Jean" required value={form.firstName} onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} />
+        </div>
+        <div>
+          <label className="text-xs text-[var(--text-secondary)] block mb-1.5">Nom *</label>
+          <input className="input-field" placeholder="Dupont" required value={form.lastName} onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))} />
+        </div>
+      </div>
+
+      <div>
+        <label className="text-xs text-[var(--text-secondary)] block mb-1.5">Email *</label>
+        <input className="input-field" type="email" placeholder="email@exemple.com" required value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+      </div>
+
+      <div>
+        <label className="text-xs text-[var(--text-secondary)] block mb-1.5">Téléphone</label>
+        <input className="input-field" type="tel" placeholder="06..." value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+      </div>
+
+      <div>
+        <label className="text-xs text-[var(--text-secondary)] block mb-1.5">Vous êtes *</label>
+        <div className="grid grid-cols-2 gap-2">
+          {(['particulier', 'professionnel'] as const).map(t => (
+            <button key={t} type="button" onClick={() => setForm(f => ({ ...f, type: t }))}
+              className={`py-2.5 rounded-xl text-sm font-medium border transition-colors capitalize ${
+                form.type === t ? 'bg-[var(--accent)] border-[var(--accent)] text-white' : 'bg-[var(--bg-elevated)] border-[var(--border)] text-[var(--text-secondary)]'
+              }`}>
+              {t === 'particulier' ? '👤 Particulier' : '🏢 Professionnel'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="text-xs text-[var(--text-secondary)] block mb-1.5">Message *</label>
+        <textarea className="input-field resize-none" rows={4} placeholder="Votre message..." required value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} />
+      </div>
+
+      {status === 'error' && (
+        <p className="text-red-400 text-sm">Une erreur est survenue. Réessayez ou contactez-nous par email.</p>
+      )}
+
+      <button type="submit" disabled={status === 'loading'} className="btn-cta w-full font-bebas text-lg">
+        {status === 'loading' ? <Loader2 size={18} className="animate-spin" /> : <><Send size={16} /> Envoyer le message</>}
+      </button>
+    </form>
+  )
+}
 
 interface Props {
   activities: Activity[]
@@ -184,6 +267,19 @@ export function LandingClient({ activities }: Props) {
             </motion.div>
           ))}
         </div>
+      </section>
+
+      {/* CONTACT */}
+      <section className="px-5 py-12 max-w-lg mx-auto border-t border-[var(--border)]">
+        <div className="mb-8">
+          <h2 className="font-bebas text-4xl text-[var(--text-primary)]">
+            Intéressé par la technologie <span className="text-[var(--accent)]">EASYDRIFT</span> ?
+          </h2>
+          <p className="text-[var(--text-secondary)] text-sm mt-2">
+            Que vous soyez professionnel ou particulier, contactez-nous pour en savoir plus.
+          </p>
+        </div>
+        <ContactForm />
       </section>
 
       {/* FOOTER */}
