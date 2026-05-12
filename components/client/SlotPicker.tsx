@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import type { Slot, Activity } from '@/lib/supabase/types'
 import { formatTime, getAvailabilityStatus, getMorningAfternoon } from '@/lib/utils'
-import { Clock, Users } from 'lucide-react'
+import { Users } from 'lucide-react'
 
 interface SlotPickerProps {
   activity: Activity
@@ -112,9 +112,6 @@ export function SlotPicker({ activity, day, onSelect, selectedSlotId }: SlotPick
                     }`} />
                     <span className="font-semibold text-sm">
                       {formatTime(slot.start_time)}
-                    </span>
-                    <span className="text-[var(--text-secondary)] text-xs">
-                      {activity.duration} min
                     </span>
                     {past && <span className="text-[var(--text-secondary)] text-xs">Passé</span>}
                   </div>

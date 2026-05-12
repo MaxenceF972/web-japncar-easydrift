@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { Clock, Users, ChevronRight, Zap, Car, Wind } from 'lucide-react'
+import { Users, ChevronRight, Zap, Car, Wind } from 'lucide-react'
 import type { Activity } from '@/lib/supabase/types'
 import { formatPrice } from '@/lib/utils'
 
@@ -51,10 +51,6 @@ export function ActivityCard({ activity, index = 0 }: ActivityCardProps) {
           </p>
 
           <div className="flex items-center gap-4 text-sm">
-            <span className="flex items-center gap-1.5 text-[var(--text-secondary)]">
-              <Clock size={14} />
-              {activity.duration} min
-            </span>
             {activity.name === 'bapteme' && (
               <span className="flex items-center gap-1.5 text-[var(--text-secondary)]">
                 <Users size={14} />
