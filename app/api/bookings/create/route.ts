@@ -36,9 +36,14 @@ export async function POST(req: NextRequest) {
       paymentStatus = 'free'
       amountPaid = 0
     } else if (checkoutId) {
-      // Vérifier le paiement SumUp
-      const checkout = await getSumUpCheckout(checkoutId)
-      if (!isSumUpPaymentSuccessful(checkout)) {
+      // Vérifier le paiement SumUp avec retry (SumUp peut mettre 1-2s à marquer PAID)
+      let checkout = null
+      for (let attempt = 0; attempt < 4; attempt++) {
+        if (attempt > 0) await new Promise(r => setTimeout(r, 1500))
+        checkout = await getSumUpCheckout(checkoutId)
+        if (isSumUpPaymentSuccessful(checkout)) break
+      }
+      if (!checkout || !isSumUpPaymentSuccessful(checkout)) {
         return NextResponse.json({ error: 'Paiement non confirmé' }, { status: 402 })
       }
       paymentStatus = 'paid'
