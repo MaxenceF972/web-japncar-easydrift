@@ -1,6 +1,10 @@
 'use client'
 
-import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Lock } from 'lucide-react'
+
+const SESSION_KEY = 'previsionnel_auth'
+const PASSWORD    = 'driftagain'
 
 // ── Données fixes du planning ──────────────────────────────────────────────
 const CHARGES = [
@@ -28,6 +32,51 @@ function formatEur(n: number) {
 }
 
 export default function PrevisionnelPage() {
+  const [unlocked, setUnlocked] = useState(false)
+  const [input, setInput]       = useState('')
+  const [error, setError]       = useState(false)
+
+  useEffect(() => {
+    if (sessionStorage.getItem(SESSION_KEY) === '1') setUnlocked(true)
+  }, [])
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (input === PASSWORD) {
+      sessionStorage.setItem(SESSION_KEY, '1')
+      setUnlocked(true)
+    } else {
+      setError(true)
+      setInput('')
+    }
+  }
+
+  if (!unlocked) {
+    return (
+      <div className="md:ml-56 min-h-dvh flex items-center justify-center p-5">
+        <div className="card p-8 w-full max-w-sm text-center">
+          <div className="w-12 h-12 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center mx-auto mb-4">
+            <Lock size={24} className="text-[var(--accent)]" />
+          </div>
+          <h2 className="font-bebas text-2xl text-[var(--text-primary)] mb-1">Prévisionnel</h2>
+          <p className="text-[var(--text-secondary)] text-sm mb-6">Accès restreint — mot de passe requis</p>
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <input
+              type="password"
+              value={input}
+              onChange={e => { setInput(e.target.value); setError(false) }}
+              placeholder="Mot de passe"
+              autoFocus
+              className={`w-full px-4 py-3 rounded-xl bg-[var(--bg-elevated)] border text-[var(--text-primary)] text-sm outline-none focus:border-[var(--accent)] transition-colors ${error ? 'border-red-500' : 'border-[var(--border)]'}`}
+            />
+            {error && <p className="text-red-400 text-xs">Mot de passe incorrect</p>}
+            <button type="submit" className="btn-cta w-full">Accéder</button>
+          </form>
+        </div>
+      </div>
+    )
+  }
+
   const totalCharges = CHARGES.reduce((s, c) => s + c.montant, 0)
   const totalCAMax   = ACTIVITES.reduce((s, a) => s + a.personnes * a.prix, 0)
   const seuilPct     = Math.ceil((totalCharges / totalCAMax) * 100)
