@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { Search, Download, Filter, Check } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Search, Download, RefreshCw } from 'lucide-react'
 import type { Booking } from '@/lib/supabase/types'
-import { formatTime, formatDate, formatPrice, getDayLabel } from '@/lib/utils'
+import { formatTime, getDayLabel } from '@/lib/utils'
 import { BookingDrawer } from '@/components/admin/BookingDrawer'
 
 const PAYMENT_LABELS: Record<string, string> = {
@@ -18,12 +19,29 @@ interface Props {
 }
 
 export function ReservationsClient({ bookings: initialBookings }: Props) {
+  const router = useRouter()
   const [search, setSearch] = useState('')
   const [filterActivity, setFilterActivity] = useState('all')
   const [filterPayment, setFilterPayment] = useState('all')
   const [filterCheckin, setFilterCheckin] = useState('all')
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
   const [bookings, setBookings] = useState(initialBookings)
+  const [refreshing, setRefreshing] = useState(false)
+
+  // Keep local state in sync when server re-renders with fresh data
+  useEffect(() => { setBookings(initialBookings) }, [initialBookings])
+
+  // Auto-refresh every 30s during the event
+  useEffect(() => {
+    const id = setInterval(() => router.refresh(), 30_000)
+    return () => clearInterval(id)
+  }, [router])
+
+  async function handleRefresh() {
+    setRefreshing(true)
+    router.refresh()
+    setTimeout(() => setRefreshing(false), 1000)
+  }
 
   const activities = useMemo(() => {
     const acts = new Map<string, string>()
@@ -72,10 +90,15 @@ export function ReservationsClient({ bookings: initialBookings }: Props) {
     <div className="md:ml-56 p-5">
       <div className="flex items-center justify-between mb-5">
         <h1 className="font-bebas text-3xl text-[var(--text-primary)]">Réservations</h1>
-        <button onClick={handleExportCSV} className="btn-secondary text-sm py-2 px-3">
-          <Download size={14} />
-          Export CSV
-        </button>
+        <div className="flex gap-2">
+          <button onClick={handleRefresh} className="btn-secondary text-sm py-2 px-3" title="Actualiser">
+            <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+          </button>
+          <button onClick={handleExportCSV} className="btn-secondary text-sm py-2 px-3">
+            <Download size={14} />
+            Export CSV
+          </button>
+        </div>
       </div>
 
       {/* Filtres */}
@@ -187,7 +210,7 @@ export function ReservationsClient({ bookings: initialBookings }: Props) {
         booking={selectedBooking}
         onClose={() => setSelectedBooking(null)}
         onCheckin={() => {}}
-        onRefresh={() => window.location.reload()}
+        onRefresh={() => router.refresh()}
       />
     </div>
   )

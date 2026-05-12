@@ -40,7 +40,9 @@ export async function POST(req: NextRequest) {
       }, { status: 409 })
     }
 
-    await supabase
+    // Mise à jour conditionnelle : ne s'exécute que si checked_in est encore false
+    // Protège contre les doubles scans simultanés
+    const { data: updated } = await supabase
       .from('bookings')
       .update({
         checked_in: true,
@@ -48,6 +50,23 @@ export async function POST(req: NextRequest) {
         checked_in_by: agentName || 'Scanner',
       })
       .eq('id', booking.id)
+      .eq('checked_in', false)
+      .select('id')
+
+    if (!updated || updated.length === 0) {
+      return NextResponse.json({
+        status: 'already_checked',
+        booking: {
+          id: booking.id,
+          firstName: booking.first_name,
+          lastName: booking.last_name,
+          activityLabel: booking.activity?.label,
+          startTime: booking.slot?.start_time,
+          day: booking.slot?.day,
+          checkedInAt: new Date().toISOString(),
+        },
+      }, { status: 409 })
+    }
 
     return NextResponse.json({
       status: 'success',

@@ -36,10 +36,12 @@ export default function ScannerPage() {
   const [result, setResult] = useState<ScanResult | null>(null)
   const [scanHistory, setScanHistory] = useState<ScanResult[]>([])
   const [cameraStarted, setCameraStarted] = useState(false)
+  const [cameraError, setCameraError] = useState<string | null>(null)
   const [processing, setProcessing] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const scannerRef = useRef<any>(null)
   const lastScannedRef = useRef<string>('')
+  const processingRef = useRef(false)
 
   useEffect(() => {
     if (cameraStarted) startCamera()
@@ -47,6 +49,7 @@ export default function ScannerPage() {
   }, [cameraStarted])
 
   async function startCamera() {
+    setCameraError(null)
     try {
       const { BrowserQRCodeReader } = await import('@zxing/browser')
       const reader = new BrowserQRCodeReader()
@@ -55,8 +58,8 @@ export default function ScannerPage() {
       await reader.decodeFromVideoDevice(
         undefined,
         videoRef.current!,
-        async (result, err) => {
-          if (result && !processing) {
+        async (result, _err) => {
+          if (result && !processingRef.current) {
             const code = result.getText()
             if (code === lastScannedRef.current) return
             lastScannedRef.current = code
@@ -65,8 +68,15 @@ export default function ScannerPage() {
           }
         }
       )
-    } catch (e) {
+    } catch (e: any) {
       console.error('Camera error:', e)
+      const msg = e?.message?.toLowerCase().includes('permission')
+        ? 'Permission caméra refusée — autorisez la caméra dans les paramètres du navigateur.'
+        : e?.message?.toLowerCase().includes('notfound') || e?.message?.toLowerCase().includes('no camera')
+        ? 'Aucune caméra détectée sur cet appareil.'
+        : 'Impossible de démarrer la caméra. Vérifiez que vous utilisez HTTPS.'
+      setCameraError(msg)
+      setCameraStarted(false)
     }
   }
 
@@ -77,6 +87,7 @@ export default function ScannerPage() {
   }
 
   async function handleScan(rawCode: string) {
+    processingRef.current = true
     setProcessing(true)
     setStatus('scanning')
 
@@ -116,6 +127,7 @@ export default function ScannerPage() {
     } catch {
       setStatus('error')
     } finally {
+      processingRef.current = false
       setProcessing(false)
       // Reset après 4 secondes
       setTimeout(() => {
@@ -128,14 +140,22 @@ export default function ScannerPage() {
   if (!cameraStarted) {
     return (
       <div className="md:ml-56 min-h-[calc(100dvh-80px)] flex flex-col items-center justify-center p-5">
-        <Camera size={48} className="text-[var(--text-secondary)] mb-6" />
+        {cameraError ? (
+          <XCircle size={48} className="text-red-400 mb-6" />
+        ) : (
+          <Camera size={48} className="text-[var(--text-secondary)] mb-6" />
+        )}
         <h1 className="font-bebas text-3xl text-[var(--text-primary)] mb-2">Scanner QR</h1>
-        <p className="text-[var(--text-secondary)] text-sm text-center mb-8">
-          Activez la caméra pour scanner les tickets d'entrée
-        </p>
+        {cameraError ? (
+          <p className="text-red-400 text-sm text-center mb-8 max-w-xs">{cameraError}</p>
+        ) : (
+          <p className="text-[var(--text-secondary)] text-sm text-center mb-8">
+            Activez la caméra pour scanner les tickets d'entrée
+          </p>
+        )}
         <button onClick={() => setCameraStarted(true)} className="btn-cta">
           <Camera size={18} />
-          Activer le scanner
+          {cameraError ? 'Réessayer' : 'Activer le scanner'}
         </button>
       </div>
     )

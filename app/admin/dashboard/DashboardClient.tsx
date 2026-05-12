@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { TrendingUp, Users, DollarSign, CheckSquare, AlertTriangle } from 'lucide-react'
-import { formatPrice, formatTime, getDayLabel } from '@/lib/utils'
+import { formatPrice, formatTime } from '@/lib/utils'
 import type { Booking, Activity } from '@/lib/supabase/types'
 
 interface KPIs {
@@ -29,6 +30,14 @@ const PAYMENT_COLORS: Record<string, string> = {
 }
 
 export function DashboardClient({ kpis, recentBookings, bookings, activities }: Props) {
+  const router = useRouter()
+
+  // Auto-refresh every 30s during the event
+  useEffect(() => {
+    const id = setInterval(() => router.refresh(), 30_000)
+    return () => clearInterval(id)
+  }, [router])
+
   const chartData = activities.map(a => ({
     name: a.label.replace('Session ', '').replace('Baptême ', 'Baptême'),
     reservations: bookings.filter(b => b.activity_id === a.id && b.payment_status !== 'cancelled').length,
