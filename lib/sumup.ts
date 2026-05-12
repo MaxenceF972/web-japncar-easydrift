@@ -36,6 +36,7 @@ export async function createSumUpCheckout(params: CreateCheckoutParams): Promise
       amount: params.amount / 100,
       currency: params.currency || 'EUR',
       merchant_code: process.env.SUMUP_MERCHANT_CODE!,
+      pay_to_email: process.env.SUMUP_MERCHANT_EMAIL!,
       description: params.description,
       return_url: params.returnUrl,
     }),
