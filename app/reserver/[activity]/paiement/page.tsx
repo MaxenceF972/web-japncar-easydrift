@@ -111,7 +111,7 @@ export default function PaiementPage() {
         sessionStorage.removeItem('easydrift_booking_draft')
         router.push(`/confirmation/${data.bookingId}`)
       } catch (e: any) {
-        setError('Paiement reçu mais erreur lors de la confirmation. Contactez-nous.')
+        setError(`Paiement reçu mais erreur : ${e.message || 'inconnue'}. Contactez-nous.`)
       }
     } else if (type === 'error') {
       setError('Le paiement a échoué. Veuillez réessayer.')
