@@ -1,17 +1,18 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Calendar, QrCode, List, UserPlus, BarChart3, LogOut, MessageSquare } from 'lucide-react'
+import { LayoutDashboard, Calendar, QrCode, List, UserPlus, BarChart3, LogOut, MessageSquare, TrendingUp } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const NAV_ITEMS = [
-  { href: '/admin/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/admin/planning',     icon: Calendar,        label: 'Planning' },
-  { href: '/admin/scanner',      icon: QrCode,          label: 'Scanner' },
-  { href: '/admin/reservations', icon: List,            label: 'Réservations' },
-  { href: '/admin/inscrire',     icon: UserPlus,        label: 'Inscrire' },
-  { href: '/admin/contacts',     icon: MessageSquare,   label: 'Contacts' },
-  { href: '/admin/stats',        icon: BarChart3,       label: 'Stats' },
+  { href: '/admin/dashboard',      icon: LayoutDashboard, label: 'Dashboard' },
+  { href: '/admin/planning',       icon: Calendar,        label: 'Planning' },
+  { href: '/admin/scanner',        icon: QrCode,          label: 'Scanner' },
+  { href: '/admin/reservations',   icon: List,            label: 'Réservations' },
+  { href: '/admin/inscrire',       icon: UserPlus,        label: 'Inscrire' },
+  { href: '/admin/contacts',       icon: MessageSquare,   label: 'Contacts' },
+  { href: '/admin/stats',          icon: BarChart3,       label: 'Stats' },
+  { href: '/admin/previsionnel',   icon: TrendingUp,      label: 'Prévisionnel' },
 ]
 
 export function AdminNav() {
