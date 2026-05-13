@@ -23,10 +23,10 @@ interface Props {
 }
 
 const PAYMENT_LABELS: Record<string, string> = {
-  paid: 'Payé', cash: 'Cash', free: 'Gratuit', pending: 'En attente', cancelled: 'Annulé',
+  paid: 'Payé', cash: 'Cash', terminal: 'Terminal', free: 'Gratuit', pending: 'En attente', cancelled: 'Annulé',
 }
 const PAYMENT_COLORS: Record<string, string> = {
-  paid: 'badge-green', cash: 'badge-purple', free: 'badge-gray', pending: 'badge-yellow', cancelled: 'badge-red',
+  paid: 'badge-green', cash: 'badge-purple', terminal: 'badge-purple', free: 'badge-gray', pending: 'badge-yellow', cancelled: 'badge-red',
 }
 
 export function DashboardClient({ kpis, recentBookings, bookings, activities }: Props) {

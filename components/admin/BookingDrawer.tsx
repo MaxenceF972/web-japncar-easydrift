@@ -16,6 +16,7 @@ interface Props {
 
 export function BookingDrawer({ booking, onClose, onCheckin, onRefresh }: Props) {
   const [loading, setLoading] = useState<string | null>(null)
+  const [emailSent, setEmailSent] = useState(false)
 
   async function handleCheckin() {
     if (!booking) return
@@ -41,12 +42,15 @@ export function BookingDrawer({ booking, onClose, onCheckin, onRefresh }: Props)
   async function handleSendEmail() {
     if (!booking) return
     setLoading('email')
+    setEmailSent(false)
     await fetch('/api/tickets/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ bookingId: booking.id }),
     })
     setLoading(null)
+    setEmailSent(true)
+    setTimeout(() => setEmailSent(false), 3000)
   }
 
   function handlePrint() {
@@ -232,11 +236,11 @@ export function BookingDrawer({ booking, onClose, onCheckin, onRefresh }: Props)
 
                 <button
                   onClick={handleSendEmail}
-                  disabled={loading === 'email'}
-                  className="btn-secondary w-full"
+                  disabled={loading === 'email' || emailSent}
+                  className={`btn-secondary w-full ${emailSent ? 'text-green-400 border-green-900/50' : ''}`}
                 >
                   {loading === 'email' ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
-                  Renvoyer le ticket par email
+                  {emailSent ? 'Email envoyé ✓' : 'Renvoyer le ticket par email'}
                 </button>
 
                 {booking.payment_status !== 'cancelled' && (

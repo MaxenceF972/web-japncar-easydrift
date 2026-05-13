@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Lock } from 'lucide-react'
 
 const SESSION_KEY = 'previsionnel_auth'
-const PASSWORD    = 'driftagain'
+const PASSWORD    = process.env.NEXT_PUBLIC_PREVISIONNEL_PASSWORD || 'driftagain'
 
 // ── Données fixes du planning ──────────────────────────────────────────────
 const CHARGES = [

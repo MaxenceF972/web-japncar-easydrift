@@ -31,6 +31,8 @@ export default function PaiementPage() {
   const sumupContainerRef = useRef<HTMLDivElement>(null)
   const widgetMountedRef = useRef(false)
   const successProcessingRef = useRef(false)
+  const retryCountRef = useRef(0)
+  const widgetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     const raw = sessionStorage.getItem('easydrift_booking_draft')
@@ -49,9 +51,15 @@ export default function PaiementPage() {
   }, [checkoutId, loading])
 
   async function createCheckout(d: any) {
+    if (retryCountRef.current >= 3) {
+      setError('Trop de tentatives. Rafraîchissez la page.')
+      return
+    }
+    retryCountRef.current += 1
     setLoading(true)
     setError(null)
     widgetMountedRef.current = false
+    if (widgetTimeoutRef.current) clearTimeout(widgetTimeoutRef.current)
     try {
       const resp = await fetch('/api/sumup/checkout', {
         method: 'POST',
@@ -75,15 +83,19 @@ export default function PaiementPage() {
   }
 
   function loadSumUpWidget(id: string) {
-    // Supprimer l'ancien script si présent (retry)
     const existing = document.getElementById('sumup-sdk')
     if (existing) existing.remove()
+
+    widgetTimeoutRef.current = setTimeout(() => {
+      setError('Le service de paiement ne répond pas. Vérifiez votre connexion et réessayez.')
+    }, 12000)
 
     const script = document.createElement('script')
     script.id = 'sumup-sdk'
     script.src = 'https://gateway.sumup.com/gateway/ecom/card/v2/sdk.js'
     script.async = true
     script.onload = () => {
+      if (widgetTimeoutRef.current) clearTimeout(widgetTimeoutRef.current)
       // @ts-ignore
       if (window.SumUpCard) {
         // @ts-ignore
@@ -95,11 +107,14 @@ export default function PaiementPage() {
         })
       }
     }
+    script.onerror = () => {
+      if (widgetTimeoutRef.current) clearTimeout(widgetTimeoutRef.current)
+      setError('Impossible de charger le service de paiement. Vérifiez votre connexion.')
+    }
     document.body.appendChild(script)
   }
 
-  async function handleSumUpResponse(type: string, body: any) {
-    console.log('SumUp onResponse:', type, JSON.stringify(body))
+  async function handleSumUpResponse(type: string, _body: any) {
     if (type === 'success') {
       if (successProcessingRef.current) return
       successProcessingRef.current = true

@@ -45,9 +45,7 @@ export async function POST(req: NextRequest) {
       for (let attempt = 0; attempt < 8; attempt++) {
         if (attempt > 0) await new Promise(r => setTimeout(r, 4000))
         checkout = await getSumUpCheckout(checkoutId)
-        console.log(`SumUp poll attempt ${attempt}: status=${checkout?.status} txs=${JSON.stringify(checkout?.transactions?.map((t: any) => ({ status: t.status, type: t.payment_type })))}`)
         if (isSumUpPaymentSuccessful(checkout)) break
-        // Arrêter immédiatement si le paiement est explicitement refusé
         const isFailed = checkout?.status === 'FAILED' ||
           checkout?.transactions?.some((t: any) => t.status === 'FAILED')
         if (isFailed) break
@@ -56,7 +54,6 @@ export async function POST(req: NextRequest) {
         const isFailed = checkout?.status === 'FAILED' ||
           checkout?.transactions?.some((t: any) => t.status === 'FAILED')
         const errorMsg = isFailed ? 'Paiement refusé par la banque' : 'Paiement non confirmé'
-        console.log(`SumUp final: ${errorMsg}, checkout=`, JSON.stringify(checkout))
         return NextResponse.json({ error: errorMsg }, { status: 402 })
       }
       paymentStatus = 'paid'

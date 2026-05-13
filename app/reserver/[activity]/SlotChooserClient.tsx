@@ -83,7 +83,7 @@ export function SlotChooserClient({ activity, eventDays }: Props) {
         </div>
 
         {/* Choix du créneau */}
-        <div>
+        <div className={selectedSlot ? 'pb-36' : ''}>
           <h2 className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-widest mb-3">
             Choisissez votre créneau
           </h2>

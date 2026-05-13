@@ -43,7 +43,7 @@ export default async function ConfirmationPage({ params }: Props) {
           <div className="space-y-2 text-sm text-[var(--text-secondary)]">
             <p>📍 Circuit de Montlhéry, 91310 Linas</p>
             <p>🚗 Parking gratuit sur place</p>
-            <p>⏰ Présentez-vous 10 min avant votre créneau</p>
+            <p>⏰ Présentez-vous 20 min avant votre créneau</p>
             <p>📱 Votre QR code sera scanné à l'entrée</p>
           </div>
         </div>
