@@ -25,7 +25,7 @@ const ACTIVITY_LABELS: Record<ActivityName, string> = {
 const ACTIVITY_PRICES: Record<ActivityName, number> = {
   bapteme: 4000,
   conduite: 5000,
-  carbooling: 100,
+  carbooling: 2000,
 }
 
 export default function InfosPage() {
