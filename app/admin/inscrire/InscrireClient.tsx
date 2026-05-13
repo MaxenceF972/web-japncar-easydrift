@@ -1,9 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
-import { CheckCircle, Loader2, User, Mail, Phone, Zap, Car, Wind, ChevronRight } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { CheckCircle, Loader2, Zap, Car, Wind, ChevronRight } from 'lucide-react'
 import type { Activity, Slot } from '@/lib/supabase/types'
 import { SlotPicker } from '@/components/client/SlotPicker'
 import { formatTime, formatPrice, getDayLabel } from '@/lib/utils'
@@ -32,6 +31,7 @@ export function InscrireClient({ activities }: Props) {
   async function handleSubmit() {
     if (!selectedActivity || !selectedSlot) return
     setLoading(true)
+    setSubmitError(null)
 
     try {
       const resp = await fetch('/api/bookings/create', {

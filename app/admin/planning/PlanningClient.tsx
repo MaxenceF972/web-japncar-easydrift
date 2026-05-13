@@ -16,6 +16,7 @@ interface Props {
 const PAYMENT_BADGES: Record<string, string> = {
   paid: 'badge-green',
   cash: 'badge-purple',
+  terminal: 'badge-purple',
   free: 'badge-gray',
   pending: 'badge-yellow',
   cancelled: 'badge-red',

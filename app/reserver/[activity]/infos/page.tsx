@@ -42,7 +42,6 @@ export default function InfosPage() {
     phone: '',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     const raw = sessionStorage.getItem('easydrift_booking_draft')
@@ -203,7 +202,6 @@ export default function InfosPage() {
 
           <button
             onClick={handleSubmit}
-            disabled={loading}
             className="btn-cta w-full font-bebas text-lg tracking-widest mt-2"
           >
             PROCÉDER AU PAIEMENT

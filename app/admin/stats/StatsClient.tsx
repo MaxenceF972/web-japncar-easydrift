@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import type { Booking, Activity, Slot } from '@/lib/supabase/types'
 import { formatPrice } from '@/lib/utils'
 
@@ -32,14 +32,16 @@ export function StatsClient({ bookings, activities, slots }: Props) {
   }, [bookings])
 
   const byPaymentMode = useMemo(() => {
-    const online = bookings.filter(b => b.payment_status === 'paid').length
-    const cash = bookings.filter(b => b.payment_status === 'cash').length
-    const free = bookings.filter(b => b.payment_status === 'free').length
+    const online   = bookings.filter(b => b.payment_status === 'paid').length
+    const cash     = bookings.filter(b => b.payment_status === 'cash').length
+    const terminal = bookings.filter(b => b.payment_status === 'terminal').length
+    const free     = bookings.filter(b => b.payment_status === 'free').length
     return [
-      { name: 'En ligne', value: online, color: '#27AE60' },
-      { name: 'Cash', value: cash, color: '#8E44AD' },
-      { name: 'Gratuit', value: free, color: '#888888' },
-    ]
+      { name: 'En ligne',  value: online,   color: '#27AE60' },
+      { name: 'Cash',      value: cash,     color: '#8E44AD' },
+      { name: 'Terminal',  value: terminal, color: '#2980B9' },
+      { name: 'Gratuit',   value: free,     color: '#888888' },
+    ].filter(e => e.value > 0)
   }, [bookings])
 
   const fillRate = useMemo(() => {
