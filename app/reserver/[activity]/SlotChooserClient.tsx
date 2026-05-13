@@ -61,7 +61,7 @@ export function SlotChooserClient({ activity, eventDays }: Props) {
         {/* Vidéo de présentation */}
         {activity.name === 'bapteme' && (
           <video
-            src="https://qsffevqpozlmjpfbqiib.supabase.co/storage/v1/object/public/media/big-in-japan_MpGgEFKl.mp4"
+            src="https://qsffevqpozlmjpfbqiib.supabase.co/storage/v1/object/public/media/japan-bapteme.mp4"
             autoPlay
             muted
             loop
