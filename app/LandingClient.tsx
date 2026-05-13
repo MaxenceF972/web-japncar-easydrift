@@ -184,7 +184,7 @@ export function LandingClient({ activities }: Props) {
             src="/logo-easydrift.png"
             alt="EASYDRIFT"
             className="mx-auto mb-2"
-            style={{ width: 'auto', height: 'auto', maxWidth: '260px', maxHeight: '70px', objectFit: 'contain', filter: 'drop-shadow(0 0 20px rgba(244,123,32,0.4))' }}
+            style={{ width: 'auto', height: 'auto', maxWidth: '320px', maxHeight: '100px', objectFit: 'contain', filter: 'drop-shadow(0 0 20px rgba(244,123,32,0.4))' }}
           />
           <p className="font-bebas text-2xl text-[var(--text-secondary)] mb-2 tracking-widest">
             JAPN CAR <span className="text-[var(--text-secondary)] text-lg">· 30/31 Mai 2026</span>

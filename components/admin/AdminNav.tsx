@@ -31,7 +31,7 @@ export function AdminNav() {
       {/* Desktop sidebar */}
       <div className="hidden md:flex fixed left-0 top-0 bottom-0 w-56 bg-[var(--bg-card)] border-r border-[var(--border)] flex-col z-40">
         <div className="p-4 border-b border-[var(--border)]">
-          <img src="/logo-easydrift.png" alt="EASYDRIFT" className="h-6 w-auto" />
+          <img src="/logo-easydrift.png" alt="EASYDRIFT" className="h-10 w-auto" />
           <p className="text-[var(--text-secondary)] text-xs mt-1">Admin</p>
         </div>
         <nav className="flex-1 p-3 space-y-1">
