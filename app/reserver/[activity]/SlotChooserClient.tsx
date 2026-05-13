@@ -58,6 +58,19 @@ export function SlotChooserClient({ activity, eventDays }: Props) {
       </div>
 
       <div className="max-w-lg mx-auto px-5 py-6 space-y-6">
+        {/* Vidéo de présentation */}
+        {activity.name === 'bapteme' && (
+          <video
+            src="/video-bapteme.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full rounded-2xl object-cover"
+            style={{ maxHeight: '220px' }}
+          />
+        )}
+
         {/* Choix du jour */}
         <div>
           <h2 className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-widest mb-3">
