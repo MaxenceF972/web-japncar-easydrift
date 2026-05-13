@@ -284,7 +284,7 @@ export function LandingClient({ activities }: Props) {
 
       {/* FOOTER */}
       <footer className="border-t border-[var(--border)] px-5 py-8 text-center">
-        <img src="/logo-easydrift.png" alt="EASYDRIFT" className="h-7 w-auto mx-auto mb-1" />
+        <img src="/logo-easydrift.png" alt="EASYDRIFT" className="h-12 w-auto mx-auto mb-2" />
         <p className="text-[var(--text-secondary)] text-xs">JAPN Car • Circuit de Montlhéry</p>
         <p className="text-[var(--text-secondary)] text-xs mt-3">
           Questions ? <a href="mailto:maxence.fortier@easydriftdts.com" className="text-[var(--accent)]">maxence.fortier@easydriftdts.com</a>
