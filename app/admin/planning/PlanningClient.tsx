@@ -276,13 +276,16 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
                         onClick={() => setSelectedBooking(booking)}
                         className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] hover:border-[var(--accent)] transition-colors text-xs"
                       >
-                        <span className={`w-1.5 h-1.5 rounded-full ${booking.checked_in ? 'bg-green-500' : 'bg-[var(--text-secondary)]'}`} />
                         <span className="text-[var(--text-primary)]">
                           {booking.first_name} {booking.last_name.charAt(0)}.
                         </span>
-                        <span className={`badge ${PAYMENT_BADGES[booking.payment_status]}`} style={{ fontSize: '10px', padding: '1px 6px' }}>
-                          {booking.payment_status === 'paid' ? '✓' : booking.payment_status === 'cash' ? '💵' : '⏳'}
-                        </span>
+                        {booking.checked_in ? (
+                          <span className="badge badge-green" style={{ fontSize: '10px', padding: '1px 6px' }}>✓ Scanné</span>
+                        ) : (
+                          <span className={`badge ${PAYMENT_BADGES[booking.payment_status]}`} style={{ fontSize: '10px', padding: '1px 6px' }}>
+                            {booking.payment_status === 'paid' ? 'En ligne' : booking.payment_status === 'cash' ? 'Cash' : booking.payment_status === 'terminal' ? 'Terminal' : booking.payment_status === 'free' ? 'Gratuit' : '⏳'}
+                          </span>
+                        )}
                       </button>
                     ))}
                   </div>
