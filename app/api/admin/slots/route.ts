@@ -9,8 +9,6 @@ async function checkAuth() {
 
 // Récupérer les créneaux avec leurs réservations (service role pour bypasser RLS)
 export async function GET(req: NextRequest) {
-  if (!await checkAuth()) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
-
   const { searchParams } = new URL(req.url)
   const activityId = searchParams.get('activityId')
   const day = searchParams.get('day')
