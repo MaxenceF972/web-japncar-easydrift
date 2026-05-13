@@ -131,7 +131,7 @@ function ContactForm() {
       </div>
 
       {status === 'error' && (
-        <p className="text-red-400 text-sm">Une erreur est survenue. Réessayez ou contactez-nous par email.</p>
+        <p className="text-red-400 text-sm">Une erreur est survenue. Réessayez ou écrivez-nous à <span className="underline">maxence.fortier@easydriftdts.com</span></p>
       )}
 
       <button type="submit" disabled={status === 'loading'} className="btn-cta w-full font-bebas text-lg">

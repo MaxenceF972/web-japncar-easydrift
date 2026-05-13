@@ -166,11 +166,13 @@ export function BookingDrawer({ booking, onClose, onCheckin, onRefresh }: Props)
                   <div>
                     <p className="text-[var(--text-secondary)] text-xs">Statut paiement</p>
                     <span className={`badge mt-1 ${
-                      booking.payment_status === 'paid' ? 'badge-green' :
-                      booking.payment_status === 'cash' ? 'badge-purple' :
-                      booking.payment_status === 'pending' ? 'badge-yellow' : 'badge-red'
+                      booking.payment_status === 'paid'     ? 'badge-green' :
+                      booking.payment_status === 'cash'     ? 'badge-purple' :
+                      booking.payment_status === 'terminal' ? 'badge-purple' :
+                      booking.payment_status === 'free'     ? 'badge-gray' :
+                      booking.payment_status === 'pending'  ? 'badge-yellow' : 'badge-red'
                     }`}>
-                      {booking.payment_status}
+                      {{ paid: 'Payé', cash: 'Cash', terminal: 'Terminal', free: 'Gratuit', pending: 'En attente', cancelled: 'Annulé' }[booking.payment_status] ?? booking.payment_status}
                     </span>
                   </div>
                   <div>

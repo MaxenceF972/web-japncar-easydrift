@@ -1,5 +1,5 @@
 export type ActivityName = 'bapteme' | 'conduite' | 'carbooling'
-export type PaymentStatus = 'pending' | 'paid' | 'cash' | 'free' | 'cancelled'
+export type PaymentStatus = 'pending' | 'paid' | 'cash' | 'terminal' | 'free' | 'cancelled'
 export type AdminRole = 'admin' | 'staff'
 
 export interface Activity {

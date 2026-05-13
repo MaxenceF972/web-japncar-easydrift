@@ -26,6 +26,7 @@ export function InscrireClient({ activities }: Props) {
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '' })
   const [paymentMode, setPaymentMode] = useState<'cash' | 'terminal' | 'free'>('cash')
   const [loading, setLoading] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [result, setResult] = useState<{ bookingId: string; ticketCode: string } | null>(null)
 
   async function handleSubmit() {
@@ -56,7 +57,7 @@ export function InscrireClient({ activities }: Props) {
       setResult(data)
       setStep('done')
     } catch (e: any) {
-      alert(e.message)
+      setSubmitError(e.message || 'Une erreur est survenue')
     } finally {
       setLoading(false)
     }
@@ -65,8 +66,10 @@ export function InscrireClient({ activities }: Props) {
   function reset() {
     setStep(1)
     setSelectedActivity(null)
+    setSelectedDay('saturday')
     setSelectedSlot(null)
     setForm({ firstName: '', lastName: '', email: '', phone: '' })
+    setSubmitError(null)
     setResult(null)
   }
 
@@ -210,6 +213,9 @@ export function InscrireClient({ activities }: Props) {
             </div>
           </div>
 
+          {submitError && (
+            <p className="text-red-400 text-sm p-3 rounded-xl bg-red-500/10 border border-red-500/20">{submitError}</p>
+          )}
           <button
             onClick={handleSubmit}
             disabled={loading || !form.firstName || !form.lastName}
