@@ -7,6 +7,43 @@ async function checkAuth() {
   return user
 }
 
+// Récupérer les créneaux avec leurs réservations (service role pour bypasser RLS)
+export async function GET(req: NextRequest) {
+  if (!await checkAuth()) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+
+  const { searchParams } = new URL(req.url)
+  const activityId = searchParams.get('activityId')
+  const day = searchParams.get('day')
+
+  if (!activityId || !day) return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 })
+
+  const supabase = createServiceClient() as any
+
+  const { data: slots, error: slotsError } = await supabase
+    .from('slots')
+    .select('*')
+    .eq('activity_id', activityId)
+    .eq('day', day)
+    .order('start_time')
+
+  if (slotsError) return NextResponse.json({ error: slotsError.message }, { status: 500 })
+
+  const slotIds = (slots || []).map((s: any) => s.id)
+  const { data: bookings } = await supabase
+    .from('bookings')
+    .select('*')
+    .in('slot_id', slotIds)
+
+  const bookingsBySlot: Record<string, any[]> = {}
+  for (const b of bookings || []) {
+    if (!bookingsBySlot[b.slot_id]) bookingsBySlot[b.slot_id] = []
+    bookingsBySlot[b.slot_id].push(b)
+  }
+
+  const result = (slots || []).map((s: any) => ({ ...s, bookings: bookingsBySlot[s.id] || [] }))
+  return NextResponse.json({ slots: result })
+}
+
 // Créer un créneau
 export async function POST(req: NextRequest) {
   if (!await checkAuth()) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })

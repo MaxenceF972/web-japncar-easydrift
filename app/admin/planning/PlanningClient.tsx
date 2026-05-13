@@ -52,30 +52,9 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
   const fetchSlots = useCallback(async () => {
     if (!currentActivity) return
     setLoading(true)
-
-    const { data: slotsData } = await supabase
-      .from('slots')
-      .select('*')
-      .eq('activity_id', currentActivity.id)
-      .eq('day', currentDay)
-      .order('start_time')
-
-    if (!slotsData) { setSlots([]); setLoading(false); return }
-
-    const slots = slotsData as any[]
-    const slotIds = slots.map(s => s.id)
-    const { data: bookingsData } = await supabase
-      .from('bookings')
-      .select('*')
-      .in('slot_id', slotIds)
-
-    const bookingsBySlot: Record<string, Booking[]> = {}
-    for (const b of (bookingsData as any[]) || []) {
-      if (!bookingsBySlot[b.slot_id]) bookingsBySlot[b.slot_id] = []
-      bookingsBySlot[b.slot_id].push(b)
-    }
-
-    setSlots(slots.map(s => ({ ...s, bookings: bookingsBySlot[s.id] || [] })) as any)
+    const resp = await fetch(`/api/admin/slots?activityId=${currentActivity.id}&day=${currentDay}`)
+    const json = await resp.json()
+    setSlots(json.slots || [])
     setLoading(false)
   }, [currentActivity, currentDay])
 
