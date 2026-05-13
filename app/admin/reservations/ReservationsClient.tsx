@@ -209,7 +209,14 @@ export function ReservationsClient({ bookings: initialBookings }: Props) {
       <BookingDrawer
         booking={selectedBooking}
         onClose={() => setSelectedBooking(null)}
-        onCheckin={() => {}}
+        onCheckin={async (booking) => {
+          await fetch('/api/bookings/checkin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ticketCode: booking.ticket_code, agentName: 'Admin' }),
+          })
+          router.refresh()
+        }}
         onRefresh={() => router.refresh()}
       />
     </div>
