@@ -4,11 +4,9 @@ import { useState, useEffect } from 'react'
 import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Lock, Plus, Pencil, Trash2, Check, X } from 'lucide-react'
 
 const TEAM_KEY = 'previsionnel_team'
-const DEFAULT_TEAM = [
-  { id: '1', nom: '', poste: '' },
-]
+const DEFAULT_TEAM: TeamMember[] = []
 
-interface TeamMember { id: string; nom: string; poste: string }
+interface TeamMember { id: string; nom: string; poste: string; samedi: boolean; dimanche: boolean }
 
 const SESSION_KEY = 'previsionnel_auth'
 const PASSWORD    = process.env.NEXT_PUBLIC_PREVISIONNEL_PASSWORD || 'driftagain'
@@ -43,9 +41,10 @@ export default function PrevisionnelPage() {
   const [unlocked, setUnlocked] = useState(false)
   const [input, setInput]       = useState('')
   const [error, setError]       = useState(false)
-  const [team, setTeam]         = useState<TeamMember[]>([])
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editForm, setEditForm]   = useState({ nom: '', poste: '' })
+  const [team, setTeam]           = useState<TeamMember[]>([])
+  const [editingId, setEditingId]   = useState<string | null>(null)
+  const [editForm, setEditForm]     = useState({ nom: '', poste: '', samedi: true, dimanche: true })
+  const [dayFilter, setDayFilter]   = useState<'all' | 'samedi' | 'dimanche'>('all')
 
   useEffect(() => {
     const saved = localStorage.getItem(TEAM_KEY)
@@ -59,7 +58,7 @@ export default function PrevisionnelPage() {
 
   function startEdit(m: TeamMember) {
     setEditingId(m.id)
-    setEditForm({ nom: m.nom, poste: m.poste })
+    setEditForm({ nom: m.nom, poste: m.poste, samedi: m.samedi, dimanche: m.dimanche })
   }
 
   function confirmEdit() {
@@ -72,9 +71,13 @@ export default function PrevisionnelPage() {
   }
 
   function addMember() {
-    const newMember = { id: Date.now().toString(), nom: '', poste: '' }
+    const newMember: TeamMember = { id: Date.now().toString(), nom: '', poste: '', samedi: true, dimanche: true }
     saveTeam([...team, newMember])
     startEdit(newMember)
+  }
+
+  function toggleDay(id: string, day: 'samedi' | 'dimanche') {
+    saveTeam(team.map(m => m.id === id ? { ...m, [day]: !m[day] } : m))
   }
 
   useEffect(() => {
@@ -310,31 +313,56 @@ export default function PrevisionnelPage() {
       <div className="card p-5 mt-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bebas text-xl text-[var(--text-primary)]">Équipe</h2>
-          <button
-            onClick={addMember}
-            className="flex items-center gap-1.5 text-xs text-[var(--accent)] hover:opacity-80 transition-opacity"
-          >
-            <Plus size={14} /> Ajouter
-          </button>
+          <div className="flex items-center gap-2">
+            {(['all', 'samedi', 'dimanche'] as const).map(f => (
+              <button
+                key={f}
+                onClick={() => setDayFilter(f)}
+                className={`text-xs px-3 py-1 rounded-lg font-semibold transition-colors ${
+                  dayFilter === f
+                    ? 'bg-[var(--accent)] text-white'
+                    : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                {f === 'all' ? 'Tous' : f === 'samedi' ? 'Samedi' : 'Dimanche'}
+              </button>
+            ))}
+            <button
+              onClick={addMember}
+              className="flex items-center gap-1.5 text-xs text-[var(--accent)] hover:opacity-80 transition-opacity ml-2"
+            >
+              <Plus size={14} /> Ajouter
+            </button>
+          </div>
         </div>
 
-        <div className="space-y-2">
-          {team.map(m => editingId === m.id ? (
-            <div key={m.id} className="flex items-center gap-2">
+        <div className="space-y-1">
+          {team
+            .filter(m => dayFilter === 'all' || m[dayFilter])
+            .map(m => editingId === m.id ? (
+            <div key={m.id} className="flex flex-wrap items-center gap-2 py-2">
               <input
-                className="flex-1 px-3 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--accent)] text-[var(--text-primary)] text-sm outline-none"
+                className="flex-1 min-w-[120px] px-3 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--accent)] text-[var(--text-primary)] text-sm outline-none"
                 placeholder="Prénom Nom"
                 value={editForm.nom}
                 onChange={e => setEditForm(f => ({ ...f, nom: e.target.value }))}
                 autoFocus
               />
               <input
-                className="flex-1 px-3 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-primary)] text-sm outline-none focus:border-[var(--accent)]"
+                className="flex-1 min-w-[160px] px-3 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-primary)] text-sm outline-none focus:border-[var(--accent)]"
                 placeholder="Poste / rôle"
                 value={editForm.poste}
                 onChange={e => setEditForm(f => ({ ...f, poste: e.target.value }))}
                 onKeyDown={e => { if (e.key === 'Enter') confirmEdit() }}
               />
+              <button
+                onClick={() => setEditForm(f => ({ ...f, samedi: !f.samedi }))}
+                className={`text-xs px-2.5 py-1.5 rounded-lg font-semibold transition-colors ${editForm.samedi ? 'bg-orange-500/20 text-orange-400' : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)]'}`}
+              >SAM</button>
+              <button
+                onClick={() => setEditForm(f => ({ ...f, dimanche: !f.dimanche }))}
+                className={`text-xs px-2.5 py-1.5 rounded-lg font-semibold transition-colors ${editForm.dimanche ? 'bg-orange-500/20 text-orange-400' : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)]'}`}
+              >DIM</button>
               <button onClick={confirmEdit} className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center text-green-400 hover:bg-green-500/30 transition-colors">
                 <Check size={14} />
               </button>
@@ -344,24 +372,36 @@ export default function PrevisionnelPage() {
             </div>
           ) : (
             <div key={m.id} className="flex items-center justify-between py-2 border-b border-[var(--border)]/50 group">
-              <div>
+              <div className="flex-1 min-w-0">
                 <span className="text-[var(--text-primary)] text-sm font-medium">{m.nom || <span className="text-[var(--text-secondary)] italic">Sans nom</span>}</span>
                 {m.poste && <span className="text-[var(--text-secondary)] text-xs ml-2">· {m.poste}</span>}
               </div>
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => startEdit(m)} className="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">
-                  <Pencil size={12} />
-                </button>
-                <button onClick={() => deleteMember(m.id)} className="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-secondary)] hover:text-red-400 transition-colors">
-                  <Trash2 size={12} />
-                </button>
+              <div className="flex items-center gap-1.5 ml-3 shrink-0">
+                <button
+                  onClick={() => toggleDay(m.id, 'samedi')}
+                  className={`text-xs px-2 py-0.5 rounded font-semibold transition-colors ${m.samedi ? 'bg-orange-500/20 text-orange-400' : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)]/40 line-through'}`}
+                >SAM</button>
+                <button
+                  onClick={() => toggleDay(m.id, 'dimanche')}
+                  className={`text-xs px-2 py-0.5 rounded font-semibold transition-colors ${m.dimanche ? 'bg-purple-500/20 text-purple-400' : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)]/40 line-through'}`}
+                >DIM</button>
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => startEdit(m)} className="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">
+                    <Pencil size={12} />
+                  </button>
+                  <button onClick={() => deleteMember(m.id)} className="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-secondary)] hover:text-red-400 transition-colors">
+                    <Trash2 size={12} />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
 
-        {team.length === 0 && (
-          <p className="text-[var(--text-secondary)] text-sm text-center py-4">Aucun membre — cliquez sur Ajouter</p>
+        {team.filter(m => dayFilter === 'all' || m[dayFilter]).length === 0 && (
+          <p className="text-[var(--text-secondary)] text-sm text-center py-4">
+            {team.length === 0 ? 'Aucun membre — cliquez sur Ajouter' : 'Aucun membre disponible ce jour'}
+          </p>
         )}
       </div>
     </div>
