@@ -20,9 +20,10 @@ const CHARGES = [
 ]
 
 const ACTIVITES = [
+  { nom: 'Baptême — Samedi', couleur: '#F47B20', personnes: 396, prix: 50, detail: '44 créneaux × 9 pers. (3 voitures × 3 places)' },
+  { nom: 'Baptême — Dimanche', couleur: '#E8601C', personnes: 264, prix: 50, detail: '44 créneaux × 6 pers. (2 voitures × 3 places)' },
   { nom: 'Session Conduite', couleur: '#E67E22', personnes: 122, prix: 50, detail: '61 passages/j × 2j × 1 pilote' },
-  { nom: 'Baptême EASYDRIFT', couleur: '#F47B20', personnes: 440, prix: 40, detail: '44 passages/j × 2j × 5 passagers' },
-  { nom: 'Car Booling CLIO', couleur: '#8E44AD', personnes: 20, prix: 20, detail: '10 passages/j × 2j × 1 passager' },
+  { nom: 'Car Booling / Football', couleur: '#8E44AD', personnes: 14, prix: 25, detail: '7 passages/j × 2j × 1 passager' },
 ]
 
 const SCENARIOS = [25, 50, 75, 100]

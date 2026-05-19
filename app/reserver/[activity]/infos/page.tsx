@@ -19,13 +19,13 @@ interface Draft {
 const ACTIVITY_LABELS: Record<ActivityName, string> = {
   bapteme: 'Baptême EASYDRIFT',
   conduite: 'Session Conduite',
-  carbooling: 'Car Booling',
+  carbooling: 'Car Booling / Football',
 }
 
 const ACTIVITY_PRICES: Record<ActivityName, number> = {
-  bapteme: 4000,
+  bapteme: 5000,
   conduite: 5000,
-  carbooling: 2000,
+  carbooling: 2500,
 }
 
 export default function InfosPage() {

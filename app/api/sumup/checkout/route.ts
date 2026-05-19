@@ -5,9 +5,9 @@ import { generateTicketCode } from '@/lib/utils'
 import type { ActivityName } from '@/lib/supabase/types'
 
 const PRICES: Record<ActivityName, number> = {
-  bapteme: 4000,
+  bapteme: 5000,
   conduite: 5000,
-  carbooling: 2000,
+  carbooling: 2500,
 }
 
 export async function POST(req: NextRequest) {
