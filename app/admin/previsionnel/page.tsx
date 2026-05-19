@@ -1,7 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Lock } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Lock, Plus, Pencil, Trash2, Check, X } from 'lucide-react'
+
+const TEAM_KEY = 'previsionnel_team'
+const DEFAULT_TEAM = [
+  { id: '1', nom: '', poste: '' },
+]
+
+interface TeamMember { id: string; nom: string; poste: string }
 
 const SESSION_KEY = 'previsionnel_auth'
 const PASSWORD    = process.env.NEXT_PUBLIC_PREVISIONNEL_PASSWORD || 'driftagain'
@@ -36,6 +43,39 @@ export default function PrevisionnelPage() {
   const [unlocked, setUnlocked] = useState(false)
   const [input, setInput]       = useState('')
   const [error, setError]       = useState(false)
+  const [team, setTeam]         = useState<TeamMember[]>([])
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editForm, setEditForm]   = useState({ nom: '', poste: '' })
+
+  useEffect(() => {
+    const saved = localStorage.getItem(TEAM_KEY)
+    setTeam(saved ? JSON.parse(saved) : DEFAULT_TEAM)
+  }, [])
+
+  function saveTeam(next: TeamMember[]) {
+    setTeam(next)
+    localStorage.setItem(TEAM_KEY, JSON.stringify(next))
+  }
+
+  function startEdit(m: TeamMember) {
+    setEditingId(m.id)
+    setEditForm({ nom: m.nom, poste: m.poste })
+  }
+
+  function confirmEdit() {
+    saveTeam(team.map(m => m.id === editingId ? { ...m, ...editForm } : m))
+    setEditingId(null)
+  }
+
+  function deleteMember(id: string) {
+    saveTeam(team.filter(m => m.id !== id))
+  }
+
+  function addMember() {
+    const newMember = { id: Date.now().toString(), nom: '', poste: '' }
+    saveTeam([...team, newMember])
+    startEdit(newMember)
+  }
 
   useEffect(() => {
     if (sessionStorage.getItem(SESSION_KEY) === '1') setUnlocked(true)
@@ -264,6 +304,65 @@ export default function PrevisionnelPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Équipe */}
+      <div className="card p-5 mt-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-bebas text-xl text-[var(--text-primary)]">Équipe</h2>
+          <button
+            onClick={addMember}
+            className="flex items-center gap-1.5 text-xs text-[var(--accent)] hover:opacity-80 transition-opacity"
+          >
+            <Plus size={14} /> Ajouter
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          {team.map(m => editingId === m.id ? (
+            <div key={m.id} className="flex items-center gap-2">
+              <input
+                className="flex-1 px-3 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--accent)] text-[var(--text-primary)] text-sm outline-none"
+                placeholder="Prénom Nom"
+                value={editForm.nom}
+                onChange={e => setEditForm(f => ({ ...f, nom: e.target.value }))}
+                autoFocus
+              />
+              <input
+                className="flex-1 px-3 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-primary)] text-sm outline-none focus:border-[var(--accent)]"
+                placeholder="Poste / rôle"
+                value={editForm.poste}
+                onChange={e => setEditForm(f => ({ ...f, poste: e.target.value }))}
+                onKeyDown={e => { if (e.key === 'Enter') confirmEdit() }}
+              />
+              <button onClick={confirmEdit} className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center text-green-400 hover:bg-green-500/30 transition-colors">
+                <Check size={14} />
+              </button>
+              <button onClick={() => setEditingId(null)} className="w-8 h-8 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--border)] transition-colors">
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <div key={m.id} className="flex items-center justify-between py-2 border-b border-[var(--border)]/50 group">
+              <div>
+                <span className="text-[var(--text-primary)] text-sm font-medium">{m.nom || <span className="text-[var(--text-secondary)] italic">Sans nom</span>}</span>
+                {m.poste && <span className="text-[var(--text-secondary)] text-xs ml-2">· {m.poste}</span>}
+              </div>
+              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => startEdit(m)} className="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">
+                  <Pencil size={12} />
+                </button>
+                <button onClick={() => deleteMember(m.id)} className="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-secondary)] hover:text-red-400 transition-colors">
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {team.length === 0 && (
+          <p className="text-[var(--text-secondary)] text-sm text-center py-4">Aucun membre — cliquez sur Ajouter</p>
+        )}
       </div>
     </div>
   )
