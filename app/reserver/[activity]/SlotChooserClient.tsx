@@ -59,9 +59,11 @@ export function SlotChooserClient({ activity, eventDays }: Props) {
 
       <div className="max-w-lg mx-auto px-5 py-6 space-y-6">
         {/* Vidéo de présentation */}
-        {activity.name === 'bapteme' && (
+        {(activity.name === 'bapteme' || activity.name === 'carbooling') && (
           <video
-            src="https://qsffevqpozlmjpfbqiib.supabase.co/storage/v1/object/public/media/bapteme-easydrift.mp4"
+            src={activity.name === 'bapteme'
+              ? "https://qsffevqpozlmjpfbqiib.supabase.co/storage/v1/object/public/media/bapteme-easydrift.mp4"
+              : "https://qsffevqpozlmjpfbqiib.supabase.co/storage/v1/object/public/media/car-booling.mp4"}
             autoPlay
             muted
             loop
