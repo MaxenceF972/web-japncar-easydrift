@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { Users, ChevronRight, Zap, Car, Wind } from 'lucide-react'
+import { ChevronRight, Zap, Car, Wind } from 'lucide-react'
 import type { Activity } from '@/lib/supabase/types'
 import { formatPrice } from '@/lib/utils'
 
@@ -50,14 +50,7 @@ export function ActivityCard({ activity, index = 0 }: ActivityCardProps) {
             {activity.description}
           </p>
 
-          <div className="flex items-center gap-4 text-sm">
-            {activity.name === 'bapteme' && (
-              <span className="flex items-center gap-1.5 text-[var(--text-secondary)]">
-                <Users size={14} />
-                {activity.capacity} pers.
-              </span>
-            )}
-          </div>
+          <div className="flex items-center gap-4 text-sm"></div>
         </div>
 
         <div className="flex flex-col items-end gap-3 flex-shrink-0">
