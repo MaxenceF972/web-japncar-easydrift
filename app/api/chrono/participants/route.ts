@@ -2,30 +2,28 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 
 export async function GET() {
-  const supabase = createServiceClient() as any
+  try {
+    const supabase = createServiceClient() as any
 
-  const { data: activity } = await supabase
-    .from('activities')
-    .select('id')
-    .eq('name', 'conduite')
-    .single()
+    // Récupère toutes les réservations conduite via jointure slots → activities
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('id, first_name, last_name, day, slots(activity_id, activities(name))')
+      .in('payment_status', ['paid', 'cash', 'terminal', 'free'])
+      .order('last_name')
 
-  if (!activity) return NextResponse.json({ participants: [] })
+    if (error) {
+      console.error('Participants query error:', error)
+      return NextResponse.json({ participants: [], error: error.message })
+    }
 
-  const { data: slots } = await supabase
-    .from('slots')
-    .select('id')
-    .eq('activity_id', activity.id)
+    const conduite = (data || []).filter(
+      (b: any) => b.slots?.activities?.name === 'conduite'
+    )
 
-  const slotIds = (slots || []).map((s: any) => s.id)
-  if (slotIds.length === 0) return NextResponse.json({ participants: [] })
-
-  const { data } = await supabase
-    .from('bookings')
-    .select('id, first_name, last_name, day')
-    .in('slot_id', slotIds)
-    .in('payment_status', ['paid', 'cash', 'terminal', 'free'])
-    .order('last_name')
-
-  return NextResponse.json({ participants: data || [] })
+    return NextResponse.json({ participants: conduite })
+  } catch (e: any) {
+    console.error('Participants route error:', e)
+    return NextResponse.json({ participants: [] })
+  }
 }
