@@ -3,8 +3,6 @@
 import { useState, useEffect } from 'react'
 import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Lock, Plus, Pencil, Trash2, Check, X } from 'lucide-react'
 
-const TEAM_KEY = 'previsionnel_team'
-const DEFAULT_TEAM: TeamMember[] = []
 
 interface TeamMember { id: string; nom: string; poste: string; samedi: boolean; dimanche: boolean }
 
@@ -51,17 +49,25 @@ export default function PrevisionnelPage() {
   const [dayFilter, setDayFilter]   = useState<'all' | 'samedi' | 'dimanche'>('all')
 
   useEffect(() => {
-    const saved = localStorage.getItem(TEAM_KEY)
-    setTeam(saved ? JSON.parse(saved) : DEFAULT_TEAM)
+    fetch('/api/admin/team')
+      .then(r => r.json())
+      .then(d => setTeam(d.members || []))
+      .catch(() => {})
     fetch('/api/admin/bookings/count')
       .then(r => r.json())
       .then(d => setUtacCounts(d.counts ? { ...d.counts, total: d.total } : null))
       .catch(() => {})
   }, [])
 
-  function saveTeam(next: TeamMember[]) {
-    setTeam(next)
-    localStorage.setItem(TEAM_KEY, JSON.stringify(next))
+  async function addMember() {
+    const newMember: TeamMember = { id: Date.now().toString(), nom: '', poste: '', samedi: true, dimanche: true }
+    await fetch('/api/admin/team', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...newMember, position: team.length }),
+    })
+    setTeam(t => [...t, newMember])
+    startEdit(newMember)
   }
 
   function startEdit(m: TeamMember) {
@@ -69,23 +75,32 @@ export default function PrevisionnelPage() {
     setEditForm({ nom: m.nom, poste: m.poste, samedi: m.samedi, dimanche: m.dimanche })
   }
 
-  function confirmEdit() {
-    saveTeam(team.map(m => m.id === editingId ? { ...m, ...editForm } : m))
+  async function confirmEdit() {
+    const updated = { ...editForm }
+    setTeam(t => t.map(m => m.id === editingId ? { ...m, ...updated } : m))
     setEditingId(null)
+    await fetch(`/api/admin/team/${editingId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated),
+    })
   }
 
-  function deleteMember(id: string) {
-    saveTeam(team.filter(m => m.id !== id))
+  async function deleteMember(id: string) {
+    setTeam(t => t.filter(m => m.id !== id))
+    await fetch(`/api/admin/team/${id}`, { method: 'DELETE' })
   }
 
-  function addMember() {
-    const newMember: TeamMember = { id: Date.now().toString(), nom: '', poste: '', samedi: true, dimanche: true }
-    saveTeam([...team, newMember])
-    startEdit(newMember)
-  }
-
-  function toggleDay(id: string, day: 'samedi' | 'dimanche') {
-    saveTeam(team.map(m => m.id === id ? { ...m, [day]: !m[day] } : m))
+  async function toggleDay(id: string, day: 'samedi' | 'dimanche') {
+    const member = team.find(m => m.id === id)
+    if (!member) return
+    const newVal = !member[day]
+    setTeam(t => t.map(m => m.id === id ? { ...m, [day]: newVal } : m))
+    await fetch(`/api/admin/team/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [day]: newVal }),
+    })
   }
 
   useEffect(() => {
