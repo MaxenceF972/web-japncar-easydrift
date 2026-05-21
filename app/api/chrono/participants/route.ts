@@ -26,7 +26,7 @@ export async function GET() {
 
   const { data: bookings, error: e3 } = await supabase
     .from('bookings')
-    .select('id, first_name, last_name, day')
+    .select('id, first_name, last_name')
     .in('slot_id', slotIds)
     .order('last_name')
 
