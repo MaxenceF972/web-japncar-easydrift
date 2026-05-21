@@ -2,34 +2,35 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 
 export async function GET() {
-  try {
-    const supabase = createServiceClient() as any
+  const supabase = createServiceClient() as any
 
-    const { data: activities } = await supabase
-      .from('activities')
-      .select('id')
-      .eq('name', 'conduite')
+  const { data: activities, error: e1 } = await supabase
+    .from('activities')
+    .select('id')
+    .eq('name', 'conduite')
 
-    if (!activities?.length) return NextResponse.json({ participants: [] })
-    const activityId = activities[0].id
+  if (e1) return NextResponse.json({ participants: [], debug: 'activities error', error: e1.message })
+  if (!activities?.length) return NextResponse.json({ participants: [], debug: 'no conduite activity' })
 
-    const { data: slots } = await supabase
-      .from('slots')
-      .select('id')
-      .eq('activity_id', activityId)
+  const activityId = activities[0].id
 
-    const slotIds = (slots || []).map((s: any) => s.id)
-    if (!slotIds.length) return NextResponse.json({ participants: [] })
+  const { data: slots, error: e2 } = await supabase
+    .from('slots')
+    .select('id')
+    .eq('activity_id', activityId)
 
-    const { data: bookings } = await supabase
-      .from('bookings')
-      .select('id, first_name, last_name, day')
-      .in('slot_id', slotIds)
-      .in('payment_status', ['paid', 'cash', 'terminal', 'free'])
-      .order('last_name')
+  if (e2) return NextResponse.json({ participants: [], debug: 'slots error', error: e2.message })
+  if (!slots?.length) return NextResponse.json({ participants: [], debug: 'no slots', activityId })
 
-    return NextResponse.json({ participants: bookings || [] })
-  } catch (e: any) {
-    return NextResponse.json({ participants: [] })
-  }
+  const slotIds = slots.map((s: any) => s.id)
+
+  const { data: bookings, error: e3 } = await supabase
+    .from('bookings')
+    .select('id, first_name, last_name, day')
+    .in('slot_id', slotIds)
+    .order('last_name')
+
+  if (e3) return NextResponse.json({ participants: [], debug: 'bookings error', error: e3.message })
+
+  return NextResponse.json({ participants: bookings || [], debug: 'ok', count: bookings?.length })
 }
