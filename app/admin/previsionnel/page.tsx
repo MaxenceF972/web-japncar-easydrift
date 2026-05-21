@@ -264,8 +264,10 @@ export default function PrevisionnelPage() {
         <h2 className="font-bebas text-xl text-[var(--text-primary)] mb-4">Scénarios de remplissage</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {SCENARIOS.map(pct => {
-            const ca     = Math.round(totalCAMax * pct / 100)
-            const net    = ca - totalChargesMax
+            const ca      = Math.round(totalCAMax * pct / 100)
+            const utac    = Math.round(totalPersonnesMax * pct / 100) * UTAC_RATE
+            const charges = totalChargesFixes + utac
+            const net     = ca - charges
             const positif = net >= 0
             return (
               <div
@@ -282,6 +284,8 @@ export default function PrevisionnelPage() {
                 </div>
                 <p className="text-[var(--text-secondary)] text-xs mb-1">CA estimé</p>
                 <p className="font-semibold text-[var(--text-primary)] text-sm">{formatEur(ca)}</p>
+                <p className="text-[var(--text-secondary)] text-xs mt-2">Part UTAC</p>
+                <p className="text-yellow-400 text-sm font-medium">−{formatEur(utac)}</p>
                 <p className="text-[var(--text-secondary)] text-xs mt-2">Résultat net</p>
                 <p className={`font-bebas text-lg ${positif ? 'text-green-400' : 'text-red-400'}`}>
                   {positif ? '+' : ''}{formatEur(net)}
