@@ -10,10 +10,10 @@ const NAV_ITEMS = [
   { href: '/admin/scanner',        icon: QrCode,          label: 'Scanner' },
   { href: '/admin/reservations',   icon: List,            label: 'Réservations' },
   { href: '/admin/inscrire',       icon: UserPlus,        label: 'Inscrire' },
+  { href: '/admin/chrono',         icon: Timer,           label: 'Chrono' },
   { href: '/admin/contacts',       icon: MessageSquare,   label: 'Contacts' },
   { href: '/admin/stats',          icon: BarChart3,       label: 'Stats' },
   { href: '/admin/previsionnel',   icon: TrendingUp,      label: 'Prévisionnel' },
-  { href: '/admin/chrono',         icon: Timer,           label: 'Chrono' },
 ]
 
 export function AdminNav() {
