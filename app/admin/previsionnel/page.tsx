@@ -11,17 +11,20 @@ interface TeamMember { id: string; nom: string; poste: string; samedi: boolean; 
 const SESSION_KEY = 'previsionnel_auth'
 const PASSWORD    = process.env.NEXT_PUBLIC_PREVISIONNEL_PASSWORD || 'driftagain'
 
+const UTAC_RATE = 5 // € par personne
+
 // ── Données fixes du planning ──────────────────────────────────────────────
 const CHARGES = [
-  { categorie: 'Matériel', poste: 'Pneus — 3 voitures Baptême',    montant: 1200 },
-  { categorie: 'Matériel', poste: 'Anneaux — 3 voitures Baptême',  montant: 1200 },
-  { categorie: 'Matériel', poste: 'Pneus — 2 voitures Conduite',   montant: 600 },
-  { categorie: 'Matériel', poste: 'Anneaux — 2 voitures Conduite', montant: 700 },
-  { categorie: 'Matériel', poste: 'Essence — Baptême (2j)',         montant: 960 },
-  { categorie: 'Matériel', poste: 'Essence — Conduite (2j)',        montant: 280 },
-  { categorie: 'Personnel', poste: 'BPJEPS Conduite ×2 (2j)',       montant: 1400 },
-  { categorie: 'Personnel', poste: 'Bouffe personnel ×12 (2j)',     montant: 480 },
-  { categorie: 'Personnel', poste: 'Indemnités équipe ×4',          montant: 800 },
+  { poste: 'Pneus — 1 voiture Baptême',                montant: 400 },
+  { poste: 'Anneaux — 3 voitures Baptême',             montant: 1000 },
+  { poste: 'Location voitures Baptême (J1×2 + J2×1)',  montant: 648 },
+  { poste: 'Pneus — voiture Conduite',                 montant: 600 },
+  { poste: 'Anneaux — voiture Conduite',               montant: 700 },
+  { poste: 'Essence Baptême 2J',                       montant: 800 },
+  { poste: 'Essence Conduite 2J',                      montant: 250 },
+  { poste: 'Location Mégane Booling',                  montant: 180 },
+  { poste: 'Bouffe',                                   montant: 300 },
+  { poste: 'Équipe',                                   montant: 1000 },
 ]
 
 const ACTIVITES = [
@@ -41,6 +44,7 @@ export default function PrevisionnelPage() {
   const [unlocked, setUnlocked] = useState(false)
   const [input, setInput]       = useState('')
   const [error, setError]       = useState(false)
+  const [utacCounts, setUtacCounts] = useState<{ bapteme: number; conduite: number; carbooling: number; total: number } | null>(null)
   const [team, setTeam]           = useState<TeamMember[]>([])
   const [editingId, setEditingId]   = useState<string | null>(null)
   const [editForm, setEditForm]     = useState({ nom: '', poste: '', samedi: true, dimanche: true })
@@ -49,6 +53,10 @@ export default function PrevisionnelPage() {
   useEffect(() => {
     const saved = localStorage.getItem(TEAM_KEY)
     setTeam(saved ? JSON.parse(saved) : DEFAULT_TEAM)
+    fetch('/api/admin/bookings/count')
+      .then(r => r.json())
+      .then(d => setUtacCounts(d.counts ? { ...d.counts, total: d.total } : null))
+      .catch(() => {})
   }, [])
 
   function saveTeam(next: TeamMember[]) {
@@ -121,12 +129,13 @@ export default function PrevisionnelPage() {
     )
   }
 
-  const totalCharges = CHARGES.reduce((s, c) => s + c.montant, 0)
-  const totalCAMax   = ACTIVITES.reduce((s, a) => s + a.personnes * a.prix, 0)
-  const seuilPct     = Math.ceil((totalCharges / totalCAMax) * 100)
-
-  const materiel  = CHARGES.filter(c => c.categorie === 'Matériel').reduce((s, c) => s + c.montant, 0)
-  const personnel = CHARGES.filter(c => c.categorie === 'Personnel').reduce((s, c) => s + c.montant, 0)
+  const totalChargesFixes = CHARGES.reduce((s, c) => s + c.montant, 0)
+  const totalCAMax        = ACTIVITES.reduce((s, a) => s + a.personnes * a.prix, 0)
+  const totalPersonnesMax = ACTIVITES.reduce((s, a) => s + a.personnes, 0)
+  const utacMax           = totalPersonnesMax * UTAC_RATE
+  const totalChargesMax   = totalChargesFixes + utacMax
+  const seuilPct          = Math.ceil((totalChargesMax / totalCAMax) * 100)
+  const utacLive          = utacCounts ? utacCounts.total * UTAC_RATE : null
 
   return (
     <div className="md:ml-56 p-5 max-w-4xl">
@@ -136,7 +145,7 @@ export default function PrevisionnelPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="card p-4">
           <p className="text-[var(--text-secondary)] text-xs">Charges fixes</p>
-          <p className="font-bebas text-2xl text-red-400 mt-1">{formatEur(totalCharges)}</p>
+          <p className="font-bebas text-2xl text-red-400 mt-1">{formatEur(totalChargesFixes)}</p>
         </div>
         <div className="card p-4">
           <p className="text-[var(--text-secondary)] text-xs">CA max (100%)</p>
@@ -148,7 +157,7 @@ export default function PrevisionnelPage() {
         </div>
         <div className="card p-4">
           <p className="text-[var(--text-secondary)] text-xs">Bénéfice max</p>
-          <p className="font-bebas text-2xl text-green-400 mt-1">{formatEur(totalCAMax - totalCharges)}</p>
+          <p className="font-bebas text-2xl text-green-400 mt-1">{formatEur(totalCAMax - totalChargesMax)}</p>
         </div>
       </div>
 
@@ -156,43 +165,46 @@ export default function PrevisionnelPage() {
 
         {/* Charges */}
         <div className="card p-5">
-          <h2 className="font-bebas text-xl text-[var(--text-primary)] mb-4">Charges fixes</h2>
-
-          <div className="mb-3">
-            <p className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider mb-2">
-              Matériel & Logistique
-            </p>
-            {CHARGES.filter(c => c.categorie === 'Matériel').map(c => (
-              <div key={c.poste} className="flex justify-between text-sm py-1 border-b border-[var(--border)]/50">
-                <span className="text-[var(--text-secondary)]">{c.poste}</span>
-                <span className="text-[var(--text-primary)] font-medium">{formatEur(c.montant)}</span>
-              </div>
-            ))}
-            <div className="flex justify-between text-sm py-1.5 font-semibold">
-              <span className="text-[var(--text-primary)]">Sous-total Matériel</span>
-              <span className="text-orange-400">{formatEur(materiel)}</span>
+          <h2 className="font-bebas text-xl text-[var(--text-primary)] mb-4">Charges fixes TTC</h2>
+          {CHARGES.map(c => (
+            <div key={c.poste} className="flex justify-between text-sm py-1 border-b border-[var(--border)]/50">
+              <span className="text-[var(--text-secondary)]">{c.poste}</span>
+              <span className="text-[var(--text-primary)] font-medium">{formatEur(c.montant)}</span>
             </div>
-          </div>
-
-          <div>
-            <p className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider mb-2">
-              Personnel
-            </p>
-            {CHARGES.filter(c => c.categorie === 'Personnel').map(c => (
-              <div key={c.poste} className="flex justify-between text-sm py-1 border-b border-[var(--border)]/50">
-                <span className="text-[var(--text-secondary)]">{c.poste}</span>
-                <span className="text-[var(--text-primary)] font-medium">{formatEur(c.montant)}</span>
-              </div>
-            ))}
-            <div className="flex justify-between text-sm py-1.5 font-semibold">
-              <span className="text-[var(--text-primary)]">Sous-total Personnel</span>
-              <span className="text-orange-400">{formatEur(personnel)}</span>
-            </div>
-          </div>
-
+          ))}
           <div className="flex justify-between text-base pt-3 mt-1 border-t-2 border-[var(--border)] font-bebas">
-            <span className="text-[var(--text-primary)]">TOTAL CHARGES</span>
-            <span className="text-red-400 text-xl">{formatEur(totalCharges)}</span>
+            <span className="text-[var(--text-primary)]">TOTAL CHARGES FIXES</span>
+            <span className="text-red-400 text-xl">{formatEur(totalChargesFixes)}</span>
+          </div>
+
+          {/* UTAC */}
+          <div className="mt-4 pt-3 border-t border-[var(--border)]">
+            <p className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider mb-2">UTAC — 5€ / personne</p>
+            {utacCounts ? (
+              <>
+                <div className="flex justify-between text-sm py-1 border-b border-[var(--border)]/50">
+                  <span className="text-[var(--text-secondary)]">Baptême ({(utacCounts.bapteme)} pers.)</span>
+                  <span className="text-[var(--text-primary)] font-medium">{formatEur(utacCounts.bapteme * UTAC_RATE)}</span>
+                </div>
+                <div className="flex justify-between text-sm py-1 border-b border-[var(--border)]/50">
+                  <span className="text-[var(--text-secondary)]">Conduite ({utacCounts.conduite} pers.)</span>
+                  <span className="text-[var(--text-primary)] font-medium">{formatEur(utacCounts.conduite * UTAC_RATE)}</span>
+                </div>
+                <div className="flex justify-between text-sm py-1 border-b border-[var(--border)]/50">
+                  <span className="text-[var(--text-secondary)]">Car Booling ({utacCounts.carbooling} pers.)</span>
+                  <span className="text-[var(--text-primary)] font-medium">{formatEur(utacCounts.carbooling * UTAC_RATE)}</span>
+                </div>
+                <div className="flex justify-between text-sm py-1.5 font-semibold">
+                  <span className="text-yellow-400">UTAC dû actuellement</span>
+                  <span className="text-yellow-400">{formatEur(utacCounts.total * UTAC_RATE)}</span>
+                </div>
+              </>
+            ) : (
+              <div className="flex justify-between text-sm py-1">
+                <span className="text-[var(--text-secondary)]">UTAC max (100%)</span>
+                <span className="text-[var(--text-primary)] font-medium">{formatEur(utacMax)}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -238,7 +250,7 @@ export default function PrevisionnelPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {SCENARIOS.map(pct => {
             const ca     = Math.round(totalCAMax * pct / 100)
-            const net    = ca - totalCharges
+            const net    = ca - totalChargesMax
             const positif = net >= 0
             return (
               <div
