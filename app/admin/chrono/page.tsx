@@ -8,15 +8,25 @@ function formatTime(ms: number) {
   const min = Math.floor(ms / 60000)
   const sec = Math.floor((ms % 60000) / 1000)
   const cs  = Math.floor((ms % 1000) / 10)
-  return `${min}:${sec.toString().padStart(2, '0')}.${cs.toString().padStart(2, '0')}`
+  if (min > 0) return `${min}:${sec.toString().padStart(2, '0')}.${cs.toString().padStart(2, '0')}`
+  return `${sec}.${cs.toString().padStart(2, '0')}s`
 }
 
+// Accepte : 45.23 (secondes) ou 1:23.45 (minutes:secondes)
 function parseTime(str: string): number | null {
-  const match = str.trim().match(/^(\d+):(\d{1,2})\.(\d{1,2})$/)
-  if (!match) return null
-  const [, min, sec, cs] = match.map(Number)
-  if (sec >= 60) return null
-  return (min * 60 + sec) * 1000 + cs * 10
+  const s = str.trim()
+  const withMin = s.match(/^(\d+):(\d{1,2})\.(\d{1,2})$/)
+  if (withMin) {
+    const [, min, sec, cs] = withMin.map(Number)
+    if (sec >= 60) return null
+    return (min * 60 + sec) * 1000 + cs * 10
+  }
+  const secOnly = s.match(/^(\d+)\.(\d{1,2})$/)
+  if (secOnly) {
+    const [, sec, cs] = secOnly.map(Number)
+    return sec * 1000 + cs * 10
+  }
+  return null
 }
 
 const DAYS = [
@@ -99,7 +109,7 @@ function ChronoContent() {
         </div>
         <div>
           <h1 className="font-bebas text-2xl text-[var(--text-primary)]">Chrono Session Conduite</h1>
-          <p className="text-[var(--text-secondary)] text-xs">Format : M:SS.cc — ex: 1:23.45</p>
+          <p className="text-[var(--text-secondary)] text-xs">Format : SS.cc (ex: 45.23) ou M:SS.cc (ex: 1:23.45)</p>
         </div>
       </div>
 
@@ -158,10 +168,10 @@ function ChronoContent() {
 
         {/* Temps */}
         <div>
-          <label className="text-xs text-[var(--text-secondary)] block mb-1.5">Temps (M:SS.cc)</label>
+          <label className="text-xs text-[var(--text-secondary)] block mb-1.5">Temps</label>
           <input
             className="input-field font-mono text-lg tracking-widest"
-            placeholder="1:23.45"
+            placeholder="45.23"
             value={timeInput}
             onChange={e => { setTimeInput(e.target.value); setError('') }}
             onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }}

@@ -5,25 +5,31 @@ export async function GET() {
   try {
     const supabase = createServiceClient() as any
 
-    // Récupère toutes les réservations conduite via jointure slots → activities
-    const { data, error } = await supabase
+    const { data: activities } = await supabase
+      .from('activities')
+      .select('id')
+      .eq('name', 'conduite')
+
+    if (!activities?.length) return NextResponse.json({ participants: [] })
+    const activityId = activities[0].id
+
+    const { data: slots } = await supabase
+      .from('slots')
+      .select('id')
+      .eq('activity_id', activityId)
+
+    const slotIds = (slots || []).map((s: any) => s.id)
+    if (!slotIds.length) return NextResponse.json({ participants: [] })
+
+    const { data: bookings } = await supabase
       .from('bookings')
-      .select('id, first_name, last_name, day, slots(activity_id, activities(name))')
+      .select('id, first_name, last_name, day')
+      .in('slot_id', slotIds)
       .in('payment_status', ['paid', 'cash', 'terminal', 'free'])
       .order('last_name')
 
-    if (error) {
-      console.error('Participants query error:', error)
-      return NextResponse.json({ participants: [], error: error.message })
-    }
-
-    const conduite = (data || []).filter(
-      (b: any) => b.slots?.activities?.name === 'conduite'
-    )
-
-    return NextResponse.json({ participants: conduite })
+    return NextResponse.json({ participants: bookings || [] })
   } catch (e: any) {
-    console.error('Participants route error:', e)
     return NextResponse.json({ participants: [] })
   }
 }

@@ -7,7 +7,8 @@ function formatTime(ms: number) {
   const min = Math.floor(ms / 60000)
   const sec = Math.floor((ms % 60000) / 1000)
   const cs  = Math.floor((ms % 1000) / 10)
-  return `${min}:${sec.toString().padStart(2, '0')}.${cs.toString().padStart(2, '0')}`
+  if (min > 0) return `${min}:${sec.toString().padStart(2, '0')}.${cs.toString().padStart(2, '0')}`
+  return `${sec}.${cs.toString().padStart(2, '0')}s`
 }
 
 const MEDAL_COLORS = ['#FFD700', '#C0C0C0', '#CD7F32']
