@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Calendar, QrCode, List, UserPlus, BarChart3, LogOut, MessageSquare, TrendingUp } from 'lucide-react'
+import { LayoutDashboard, Calendar, QrCode, List, UserPlus, BarChart3, LogOut, MessageSquare, TrendingUp, Timer } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const NAV_ITEMS = [
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: '/admin/contacts',       icon: MessageSquare,   label: 'Contacts' },
   { href: '/admin/stats',          icon: BarChart3,       label: 'Stats' },
   { href: '/admin/previsionnel',   icon: TrendingUp,      label: 'Prévisionnel' },
+  { href: '/admin/chrono',         icon: Timer,           label: 'Chrono' },
 ]
 
 export function AdminNav() {
