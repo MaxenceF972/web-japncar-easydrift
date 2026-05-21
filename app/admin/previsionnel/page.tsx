@@ -149,8 +149,8 @@ export default function PrevisionnelPage() {
   const totalPersonnesMax = ACTIVITES.reduce((s, a) => s + a.personnes, 0)
   const utacMax           = totalPersonnesMax * UTAC_RATE
   const totalChargesMax   = totalChargesFixes + utacMax
-  const seuilPct          = Math.ceil((totalChargesMax / totalCAMax) * 100)
-  const utacLive          = utacCounts ? utacCounts.total * UTAC_RATE : null
+  const seuilPct          = Math.ceil((totalChargesFixes / (totalCAMax - utacMax)) * 100)
+
 
   return (
     <div className="md:ml-56 p-5 max-w-4xl">
