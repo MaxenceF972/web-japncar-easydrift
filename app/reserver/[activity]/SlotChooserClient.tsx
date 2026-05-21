@@ -73,6 +73,16 @@ export function SlotChooserClient({ activity, eventDays }: Props) {
           />
         )}
 
+        {/* Classement Live — Session Conduite uniquement */}
+        {activity.name === 'conduite' && (
+          <a
+            href="/classement"
+            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-yellow-500/40 bg-yellow-500/10 text-yellow-400 text-sm font-semibold hover:bg-yellow-500/20 transition-colors"
+          >
+            🏆 Classement Live — Session Conduite
+          </a>
+        )}
+
         {/* Choix du jour */}
         <div>
           <h2 className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-widest mb-3">
