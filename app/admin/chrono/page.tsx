@@ -125,28 +125,33 @@ function ChronoContent() {
         {/* Participant */}
         <div className="relative">
           <label className="text-xs text-[var(--text-secondary)] block mb-1.5">
-            Nom du participant <span className="text-[var(--text-secondary)]/60">(tapez librement ou choisissez)</span>
+            Nom du participant
           </label>
           <input
             className="input-field"
-            placeholder="Ex : Jean Dupont"
+            placeholder={participants.length > 0 ? 'Tapez ou défilez pour choisir...' : 'Ex : Jean Dupont'}
             value={selected ? `${selected.first_name} ${selected.last_name}` : search}
             onChange={e => { setSearch(e.target.value); setSelected(null); setShowDropdown(true) }}
             onFocus={() => setShowDropdown(true)}
             onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
             autoComplete="off"
           />
-          {showDropdown && !selected && filtered.length > 0 && (
-            <div className="absolute top-full left-0 right-0 z-20 mt-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-xl overflow-hidden max-h-48 overflow-y-auto">
-              {filtered.slice(0, 10).map(p => (
+          {showDropdown && !selected && (filtered.length > 0 || participants.length > 0) && (
+            <div className="absolute top-full left-0 right-0 z-20 mt-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-xl overflow-hidden max-h-56 overflow-y-auto">
+              {(search ? filtered : participants).map(p => (
                 <button
                   key={p.id}
-                  className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors"
+                  className="w-full text-left px-4 py-3 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors border-b border-[var(--border)]/30 last:border-0"
                   onMouseDown={() => { setSelected(p); setSearch(''); setShowDropdown(false) }}
                 >
                   {p.first_name} {p.last_name}
                 </button>
               ))}
+              {search && filtered.length === 0 && (
+                <div className="px-4 py-3 text-xs text-[var(--text-secondary)]">
+                  Aucun résultat — le nom tapé sera utilisé tel quel
+                </div>
+              )}
             </div>
           )}
         </div>
