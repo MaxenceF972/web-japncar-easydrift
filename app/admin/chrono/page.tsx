@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Timer, Plus, Trash2, Trophy, ChevronDown } from 'lucide-react'
+import { Timer, Plus, Trash2, Trophy } from 'lucide-react'
 import { AdminAuthGuard } from '@/components/admin/AdminAuthGuard'
 
 function formatTime(ms: number) {
@@ -124,23 +124,18 @@ function ChronoContent() {
 
         {/* Participant */}
         <div className="relative">
-          <label className="text-xs text-[var(--text-secondary)] block mb-1.5">Participant</label>
-          <div
-            className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)] cursor-text"
-            onClick={() => setShowDropdown(true)}
-          >
-            <input
-              className="flex-1 bg-transparent text-[var(--text-primary)] text-sm outline-none"
-              placeholder="Rechercher par nom..."
-              value={selected ? `${selected.first_name} ${selected.last_name}` : search}
-              onChange={e => { setSearch(e.target.value); setSelected(null); setShowDropdown(true) }}
-              onFocus={() => setShowDropdown(true)}
-            />
-            {selected && (
-              <button onClick={() => { setSelected(null); setSearch('') }} className="text-[var(--text-secondary)] hover:text-red-400">×</button>
-            )}
-            <ChevronDown size={14} className="text-[var(--text-secondary)]" />
-          </div>
+          <label className="text-xs text-[var(--text-secondary)] block mb-1.5">
+            Nom du participant <span className="text-[var(--text-secondary)]/60">(tapez librement ou choisissez)</span>
+          </label>
+          <input
+            className="input-field"
+            placeholder="Ex : Jean Dupont"
+            value={selected ? `${selected.first_name} ${selected.last_name}` : search}
+            onChange={e => { setSearch(e.target.value); setSelected(null); setShowDropdown(true) }}
+            onFocus={() => setShowDropdown(true)}
+            onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+            autoComplete="off"
+          />
           {showDropdown && !selected && filtered.length > 0 && (
             <div className="absolute top-full left-0 right-0 z-20 mt-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-xl overflow-hidden max-h-48 overflow-y-auto">
               {filtered.slice(0, 10).map(p => (
