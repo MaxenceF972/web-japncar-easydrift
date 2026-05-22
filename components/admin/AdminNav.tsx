@@ -1,8 +1,9 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Calendar, QrCode, List, UserPlus, BarChart3, LogOut, MessageSquare, TrendingUp, Timer } from 'lucide-react'
+import { LayoutDashboard, Calendar, QrCode, List, UserPlus, BarChart3, LogOut, MessageSquare, TrendingUp, Timer, MoreHorizontal, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useState } from 'react'
 
 const NAV_ITEMS = [
   { href: '/admin/dashboard',      icon: LayoutDashboard, label: 'Dashboard' },
@@ -16,9 +17,14 @@ const NAV_ITEMS = [
   { href: '/admin/previsionnel',   icon: TrendingUp,      label: 'Prévisionnel' },
 ]
 
+// 5 items visibles en bas, le reste dans "Plus"
+const MOBILE_PRIMARY = NAV_ITEMS.slice(1, 6) // Planning, Scanner, Réservations, Inscrire, Chrono
+const MOBILE_MORE    = [NAV_ITEMS[0], ...NAV_ITEMS.slice(6)] // Dashboard, Contacts, Stats, Prévisionnel
+
 export function AdminNav() {
   const pathname = usePathname()
-  const router = useRouter()
+  const router   = useRouter()
+  const [showMore, setShowMore] = useState(false)
 
   async function handleLogout() {
     const supabase = createClient()
@@ -26,6 +32,8 @@ export function AdminNav() {
     router.push('/admin/login')
     router.refresh()
   }
+
+  const isMoreActive = MOBILE_MORE.some(i => i.href === pathname)
 
   return (
     <>
@@ -66,27 +74,64 @@ export function AdminNav() {
       {/* Spacer for desktop */}
       <div className="hidden md:block w-56 flex-shrink-0" />
 
+      {/* Mobile — drawer "Plus" */}
+      {showMore && (
+        <div className="md:hidden fixed inset-0 z-50" onClick={() => setShowMore(false)}>
+          <div className="absolute bottom-16 left-0 right-0 bg-[var(--bg-card)] border-t border-[var(--border)] px-4 pt-4 pb-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider">Plus</span>
+              <button onClick={() => setShowMore(false)}><X size={18} className="text-[var(--text-secondary)]" /></button>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {MOBILE_MORE.map(({ href, icon: Icon, label }) => {
+                const isActive = pathname === href
+                return (
+                  <a
+                    key={href}
+                    href={href}
+                    onClick={() => setShowMore(false)}
+                    className="flex flex-col items-center gap-1 p-3 rounded-xl bg-[var(--bg-elevated)] hover:bg-[var(--border)] transition-colors"
+                  >
+                    <Icon size={20} className={isActive ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)]'} />
+                    <span className={`text-[10px] text-center leading-tight ${isActive ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)]'}`}>{label}</span>
+                  </a>
+                )
+              })}
+              <button
+                onClick={handleLogout}
+                className="flex flex-col items-center gap-1 p-3 rounded-xl bg-[var(--bg-elevated)] hover:bg-red-500/10 transition-colors"
+              >
+                <LogOut size={20} className="text-[var(--text-secondary)]" />
+                <span className="text-[10px] text-[var(--text-secondary)]">Déco.</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile bottom nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg-card)] border-t border-[var(--border)] pb-safe">
-        <div className="flex items-center justify-around px-2 py-2">
-          {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
+        <div className="flex items-center justify-around px-1 py-1">
+          {MOBILE_PRIMARY.map(({ href, icon: Icon, label }) => {
             const isActive = pathname === href
             return (
               <a
                 key={href}
                 href={href}
-                className="flex flex-col items-center gap-0.5 px-2 py-1.5 min-w-[52px]"
+                className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl"
               >
-                <Icon
-                  size={20}
-                  className={isActive ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)]'}
-                />
-                <span className={`text-[10px] ${isActive ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)]'}`}>
-                  {label}
-                </span>
+                <Icon size={22} className={isActive ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)]'} />
+                <span className={`text-[10px] ${isActive ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)]'}`}>{label}</span>
               </a>
             )
           })}
+          <button
+            onClick={() => setShowMore(v => !v)}
+            className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl"
+          >
+            <MoreHorizontal size={22} className={isMoreActive || showMore ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)]'} />
+            <span className={`text-[10px] ${isMoreActive || showMore ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)]'}`}>Plus</span>
+          </button>
         </div>
       </nav>
     </>
