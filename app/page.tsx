@@ -6,6 +6,7 @@ export default async function HomePage() {
   const { data: activities } = await supabase
     .from('activities')
     .select('*')
+    .eq('admin_only', false)
     .order('price')
 
   return <LandingClient activities={activities || []} />

@@ -8,6 +8,7 @@ export default async function ReserverPage({ params }: { params: { activity: str
     .from('activities')
     .select('*')
     .eq('name', params.activity)
+    .eq('admin_only', false)
     .single()
 
   if (!activity) notFound()

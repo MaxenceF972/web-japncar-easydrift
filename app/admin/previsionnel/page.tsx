@@ -29,7 +29,8 @@ const ACTIVITES = [
   { nom: 'Baptême — Samedi', couleur: '#F47B20', personnes: 176, prix: 50, detail: '44 créneaux × 4 pers.' },
   { nom: 'Baptême — Dimanche', couleur: '#E8601C', personnes: 176, prix: 50, detail: '44 créneaux × 4 pers.' },
   { nom: 'Session Conduite', couleur: '#E67E22', personnes: 122, prix: 50, detail: '61 passages/j × 2j × 1 pilote' },
-  { nom: 'Car Booling / Football', couleur: '#8E44AD', personnes: 14, prix: 25, detail: '7 passages/j × 2j × 1 passager' },
+  { nom: 'Car Booling / Football', couleur: '#8E44AD', personnes: 14, prix: 25, detail: '7 créneaux/j × 2j × 1 pilote' },
+  { nom: 'Passager Car Booling', couleur: '#6C3483', personnes: 42, prix: 10, detail: '7 créneaux/j × 2j × 3 places — inscription sur place uniquement' },
 ]
 
 const SCENARIOS = [25, 50, 75, 100]
