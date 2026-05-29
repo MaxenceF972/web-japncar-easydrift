@@ -3,7 +3,6 @@
 import { useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import type { Booking, Activity, Slot } from '@/lib/supabase/types'
-import { formatPrice } from '@/lib/utils'
 
 interface Props {
   bookings: Booking[]
@@ -12,9 +11,6 @@ interface Props {
 }
 
 export function StatsClient({ bookings, activities, slots }: Props) {
-  const totalRevenue = useMemo(() =>
-    bookings.reduce((sum, b) => sum + (b.amount_paid || 0), 0), [bookings])
-
   const byActivity = useMemo(() =>
     activities.map(a => {
       const abs = bookings.filter(b => b.activity_id === a.id)
@@ -57,7 +53,6 @@ export function StatsClient({ bookings, activities, slots }: Props) {
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 mb-6">
         {[
-          { label: 'CA Total', value: formatPrice(totalRevenue), sub: 'TTC' },
           { label: 'Taux de remplissage', value: `${fillRate}%`, sub: 'Global' },
           { label: 'Total réservations', value: bookings.length, sub: 'Confirmées' },
         ].map(({ label, value, sub }, i) => (
