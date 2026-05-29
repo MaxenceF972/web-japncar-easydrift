@@ -2,14 +2,14 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { CheckCircle, Loader2, Zap, Car, Wind, ChevronRight } from 'lucide-react'
+import { CheckCircle, Loader2, Zap, Car, Wind, Users, ChevronRight } from 'lucide-react'
 import type { Activity, Slot } from '@/lib/supabase/types'
 import { SlotPicker } from '@/components/client/SlotPicker'
 import { formatTime, formatPrice, getDayLabel } from '@/lib/utils'
 import { QRCodeSVG } from 'qrcode.react'
 import { EVENT_DAYS } from '@/lib/event-config'
 
-const ICONS = { bapteme: Zap, conduite: Car, carbooling: Wind }
+const ICONS: Record<string, any> = { bapteme: Zap, conduite: Car, carbooling: Wind, carbooling_passager: Users }
 
 type Step = 1 | 2 | 3 | 'done'
 
