@@ -75,12 +75,16 @@ export function SlotChooserClient({ activity, eventDays }: Props) {
 
         {/* Classement Live — Session Conduite uniquement */}
         {activity.name === 'conduite' && (
-          <a
-            href="/classement"
-            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-yellow-500/40 bg-yellow-500/10 text-yellow-400 text-sm font-semibold hover:bg-yellow-500/20 transition-colors"
-          >
-            🏆 Classement Live — Session Conduite
-          </a>
+          <div className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-4">
+            <p className="text-yellow-400 text-sm font-semibold mb-1">🏆 Meilleur temps du weekend</p>
+            <p className="text-yellow-300/80 text-xs mb-3">Celui qui réalise le meilleur chrono sur l'ensemble du weekend remporte une journée EASYDRIFT EXPERIENCE sur circuit.</p>
+            <a
+              href="/classement"
+              className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-yellow-500/20 text-yellow-400 text-xs font-semibold hover:bg-yellow-500/30 transition-colors"
+            >
+              Voir le classement live →
+            </a>
+          </div>
         )}
 
         {/* Choix du jour */}

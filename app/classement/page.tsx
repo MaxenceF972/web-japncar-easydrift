@@ -91,8 +91,11 @@ export default function ClassementPage() {
         )}
       </div>
 
-      <div className="text-center py-3 text-[var(--text-secondary)] text-xs flex-shrink-0">
-        Le meilleur temps remporte une journée EASYDRIFT EXPERIENCE sur circuit
+      <div className="flex-shrink-0 px-4 pb-4">
+        <div className="max-w-lg mx-auto flex items-center gap-3 p-3 rounded-xl border border-yellow-500/40 bg-yellow-500/10">
+          <span className="text-xl">🏆</span>
+          <p className="text-yellow-400 text-xs font-semibold">Meilleur temps du weekend = 1 journée EASYDRIFT EXPERIENCE sur circuit</p>
+        </div>
       </div>
     </main>
   )

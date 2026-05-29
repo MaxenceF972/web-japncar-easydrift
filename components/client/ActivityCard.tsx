@@ -50,6 +50,13 @@ export function ActivityCard({ activity, index = 0 }: ActivityCardProps) {
             {activity.description}
           </p>
 
+          {activity.name === 'conduite' && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/30 mb-1">
+              <span className="text-base">🏆</span>
+              <p className="text-yellow-400 text-xs font-semibold">Meilleur temps du weekend = 1 journée EASYDRIFT EXPERIENCE sur circuit</p>
+            </div>
+          )}
+
           <div className="flex items-center gap-4 text-sm"></div>
         </div>
 
