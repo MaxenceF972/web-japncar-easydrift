@@ -31,6 +31,7 @@ export default async function DashboardPage() {
     revenue: totalRevenue,
     availableSlots: totalSlots - totalBooked,
     checkins: bookings.filter(b => b.checked_in).length,
+    fillRate: totalSlots > 0 ? Math.round((totalBooked / totalSlots) * 100) : 0,
   }
 
   return (

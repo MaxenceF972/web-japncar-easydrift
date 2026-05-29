@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import { TrendingUp, Users, CheckSquare, AlertTriangle } from 'lucide-react'
+import { TrendingUp, Users, CheckSquare, AlertTriangle, BarChart3 } from 'lucide-react'
 import { formatTime } from '@/lib/utils'
 import type { Booking, Activity } from '@/lib/supabase/types'
 
@@ -13,6 +13,7 @@ interface KPIs {
   revenue: number
   availableSlots: number
   checkins: number
+  fillRate: number
 }
 
 interface Props {
@@ -66,6 +67,7 @@ export function DashboardClient({ kpis, recentBookings, bookings, activities }: 
           { icon: Users, label: 'Réservations', value: kpis.totalBookings, color: 'text-blue-400' },
           { icon: TrendingUp, label: 'Places restantes', value: kpis.availableSlots, color: 'text-orange-400' },
           { icon: CheckSquare, label: 'Check-ins', value: kpis.checkins, color: 'text-purple-400' },
+          { icon: BarChart3, label: 'Remplissage', value: `${kpis.fillRate}%`, color: 'text-yellow-400' },
         ].map(({ icon: Icon, label, value, color }, i) => (
           <motion.div
             key={i}
