@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Lock, Plus, Pencil, Trash2, Check, X } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Lock, Plus, Pencil, Trash2, Check, X, Users, DollarSign, CheckSquare, BarChart3 } from 'lucide-react'
 
 
 interface TeamMember { id: string; nom: string; poste: string; samedi: boolean; dimanche: boolean }
@@ -44,6 +44,7 @@ export default function PrevisionnelPage() {
   const [input, setInput]       = useState('')
   const [error, setError]       = useState(false)
   const [utacCounts, setUtacCounts] = useState<{ bapteme: number; conduite: number; carbooling: number; total: number } | null>(null)
+  const [liveKpis, setLiveKpis] = useState<{ revenue: number; checkins: number; totalBookings: number } | null>(null)
   const [team, setTeam]           = useState<TeamMember[]>([])
   const [editingId, setEditingId]   = useState<string | null>(null)
   const [editForm, setEditForm]     = useState({ nom: '', poste: '', samedi: true, dimanche: true })
@@ -56,7 +57,10 @@ export default function PrevisionnelPage() {
       .catch(() => {})
     fetch('/api/admin/bookings/count')
       .then(r => r.json())
-      .then(d => setUtacCounts(d.counts ? { ...d.counts, total: d.total } : null))
+      .then(d => {
+        if (d.counts) setUtacCounts({ ...d.counts, total: d.total })
+        setLiveKpis({ revenue: d.revenue || 0, checkins: d.checkins || 0, totalBookings: d.totalBookings || 0 })
+      })
       .catch(() => {})
   }, [])
 
@@ -156,6 +160,32 @@ export default function PrevisionnelPage() {
   return (
     <div className="md:ml-56 p-5 max-w-4xl">
       <h1 className="font-bebas text-3xl text-[var(--text-primary)] mb-6">Prévisionnel</h1>
+
+      {/* KPIs live */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="card p-4">
+          <DollarSign size={16} className="text-green-400 mb-2" />
+          <p className="font-bebas text-2xl text-[var(--text-primary)]">{liveKpis ? formatEur(liveKpis.revenue / 100) : '—'}</p>
+          <p className="text-[var(--text-secondary)] text-xs">CA encaissé</p>
+        </div>
+        <div className="card p-4">
+          <Users size={16} className="text-blue-400 mb-2" />
+          <p className="font-bebas text-2xl text-[var(--text-primary)]">{liveKpis?.totalBookings ?? '—'}</p>
+          <p className="text-[var(--text-secondary)] text-xs">Réservations</p>
+        </div>
+        <div className="card p-4">
+          <CheckSquare size={16} className="text-purple-400 mb-2" />
+          <p className="font-bebas text-2xl text-[var(--text-primary)]">{liveKpis?.checkins ?? '—'}</p>
+          <p className="text-[var(--text-secondary)] text-xs">Check-ins</p>
+        </div>
+        <div className="card p-4">
+          <BarChart3 size={16} className="text-orange-400 mb-2" />
+          <p className="font-bebas text-2xl text-[var(--text-primary)]">
+            {liveKpis ? `${Math.round((liveKpis.totalBookings / totalPersonnesMax) * 100)}%` : '—'}
+          </p>
+          <p className="text-[var(--text-secondary)] text-xs">Remplissage</p>
+        </div>
+      </div>
 
       {/* KPIs rapides */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
