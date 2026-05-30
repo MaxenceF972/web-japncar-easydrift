@@ -110,8 +110,11 @@ export default function InfosPage() {
           {/* Un nom par créneau */}
           {draft.slots.map((slot, i) => (
             <div key={slot.slotId} className="card p-4">
-              <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-widest mb-3">
-                {multiSlot ? `Créneau ${i + 1} — ` : ''}{getDayLabel(slot.day)} · {formatTime(slot.startTime)}
+              <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-widest mb-1">
+                {slot.activityLabel || draft.activityLabel}
+              </p>
+              <p className="text-sm font-semibold text-[var(--text-primary)] mb-3">
+                {getDayLabel(slot.day)} · {formatTime(slot.startTime)}
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <div>

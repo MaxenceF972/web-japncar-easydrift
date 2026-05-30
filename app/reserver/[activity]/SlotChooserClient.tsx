@@ -195,7 +195,10 @@ export function SlotChooserClient({ activity, eventDays }: Props) {
               <div className="space-y-3">
                 {basketEntries.map(({ slot, qty }) => (
                   <div key={slot.id} className="flex items-center justify-between gap-3">
-                    <span className="text-sm text-[var(--text-primary)] flex-1">{getDayLabel(slot.day)} · {formatTime(slot.start_time)}</span>
+                    <span className="text-sm text-[var(--text-primary)] flex-1">
+                      <span className="text-[var(--text-secondary)] text-xs block">{activity.label}</span>
+                      {getDayLabel(slot.day)} · {formatTime(slot.start_time)}
+                    </span>
                     <div className="flex items-center gap-2">
                       <button onClick={() => removeOne(slot.id)} className="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] flex items-center justify-center hover:border-red-400 transition-colors">
                         <Minus size={12} className="text-[var(--text-secondary)]" />

@@ -162,10 +162,17 @@ export default function PaiementPage() {
           <div className="flex justify-between items-start">
             <div>
               <p className="font-semibold text-[var(--text-primary)]">{draft.activityLabel}</p>
-              <p className="text-[var(--text-secondary)] text-sm">
-                {draft.slots.length} créneau{draft.slots.length > 1 ? 'x' : ''} · {draft.slots[0].firstName} {draft.slots[0].lastName}
-                {draft.slots.length > 1 && ` + ${draft.slots.length - 1} autre${draft.slots.length > 2 ? 's' : ''}`}
-              </p>
+              <div className="text-[var(--text-secondary)] text-sm space-y-0.5">
+                {Object.entries(
+                  draft.slots.reduce((acc, s) => {
+                    const key = s.activityLabel || draft.activityLabel || ''
+                    acc[key] = (acc[key] || 0) + 1
+                    return acc
+                  }, {} as Record<string, number>)
+                ).map(([label, count]) => (
+                  <p key={label}>{label} × {count}</p>
+                ))}
+              </div>
             </div>
             <div className="text-right">
               <span className="font-bebas text-3xl text-[var(--accent)]">{formatPrice(totalPrice)}</span>
