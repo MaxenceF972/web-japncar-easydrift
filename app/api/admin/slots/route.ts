@@ -1,11 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient, createClient } from '@/lib/supabase/server'
-
-async function checkAuth() {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  return user
-}
+import { createServiceClient } from '@/lib/supabase/server'
 
 // Récupérer les créneaux avec leurs réservations (service role pour bypasser RLS)
 export async function GET(req: NextRequest) {
@@ -44,7 +38,6 @@ export async function GET(req: NextRequest) {
 
 // Créer un créneau
 export async function POST(req: NextRequest) {
-  if (!await checkAuth()) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
 
   const body = await req.json()
   const { activity_id, day, start_time, end_time, capacity } = body
@@ -66,7 +59,6 @@ export async function POST(req: NextRequest) {
 
 // Supprimer un créneau
 export async function DELETE(req: NextRequest) {
-  if (!await checkAuth()) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
 
   const { slotId } = await req.json()
   if (!slotId) return NextResponse.json({ error: 'ID manquant' }, { status: 400 })
