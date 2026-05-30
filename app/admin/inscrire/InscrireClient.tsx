@@ -169,7 +169,15 @@ export function InscrireClient({ activities }: Props) {
           <SlotPicker
             activity={selectedActivity}
             day={EVENT_DAYS[selectedDay]}
-            onAdd={slot => { setSelectedSlot(prev => prev?.id === slot.id ? null : slot); setQty(1); setPersons([{ firstName: '', lastName: '' }]) }}
+            onAdd={slot => {
+              if (selectedSlot?.id === slot.id) {
+                changeQty(qty + 1)
+              } else {
+                setSelectedSlot(slot)
+                setQty(1)
+                setPersons([{ firstName: '', lastName: '' }])
+              }
+            }}
             basketQtys={selectedSlot ? { [selectedSlot.id]: qty } : {}}
           />
 
