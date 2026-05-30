@@ -208,7 +208,7 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
           ...(bapteme ? (allSlots[bapteme.id] || []).filter(s => !s.is_break).map(s => ({ ...s, activity: bapteme })) : []),
           ...(conduite ? (allSlots[conduite.id] || []).filter(s => !s.is_break).map(s => ({ ...s, activity: conduite })) : []),
         ]
-          .filter(s => (s as any).bookings.some((b: Booking) => b.payment_status !== 'cancelled'))
+          .filter(s => s.booked_count > 0 || (s as any).bookings.some((b: Booking) => b.payment_status !== 'cancelled'))
           .sort((a, b) => a.start_time.localeCompare(b.start_time))
 
         if (merged.length === 0) return null
