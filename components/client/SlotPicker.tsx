@@ -5,16 +5,16 @@ import { motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import type { Slot, Activity } from '@/lib/supabase/types'
 import { formatTime, getAvailabilityStatus, getMorningAfternoon } from '@/lib/utils'
-import { Users, Plus, Check } from 'lucide-react'
+import { Users, Plus } from 'lucide-react'
 
 interface SlotPickerProps {
   activity: Activity
   day: string
-  onToggle: (slot: Slot) => void
-  selectedSlotIds?: string[]
+  onAdd: (slot: Slot) => void
+  basketQtys?: Record<string, number>
 }
 
-export function SlotPicker({ activity, day, onToggle, selectedSlotIds = [] }: SlotPickerProps) {
+export function SlotPicker({ activity, day, onAdd, basketQtys = {} }: SlotPickerProps) {
   const [slots, setSlots] = useState<Slot[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
@@ -61,13 +61,13 @@ export function SlotPicker({ activity, day, onToggle, selectedSlotIds = [] }: Sl
     const status = getAvailabilityStatus(available, slot.capacity)
     const past = isPast(slot)
     const isFull = available === 0 || past
-    const isSelected = selectedSlotIds.includes(slot.id)
+    const isSelected = (basketQtys[slot.id] || 0) > 0
     const fillPct = ((slot.booked_count / slot.capacity) * 100).toFixed(0)
 
     return (
       <motion.button
         key={slot.id}
-        onClick={() => !isFull && onToggle(slot)}
+        onClick={() => !isFull && onAdd(slot)}
         disabled={isFull}
         whileHover={!isFull ? { scale: 1.01 } : {}}
         whileTap={!isFull ? { scale: 0.99 } : {}}
@@ -107,7 +107,7 @@ export function SlotPicker({ activity, day, onToggle, selectedSlotIds = [] }: Sl
                 }
               >
                 {isSelected
-                  ? <Check size={14} className="text-white" />
+                  ? <span className="font-bebas text-sm text-white leading-none">{basketQtys[slot.id]}</span>
                   : <Plus size={14} className="text-[var(--text-secondary)]" />
                 }
               </div>
