@@ -5,38 +5,26 @@ import { motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import type { Slot, Activity } from '@/lib/supabase/types'
 import { formatTime, getAvailabilityStatus, getMorningAfternoon } from '@/lib/utils'
-import { Users } from 'lucide-react'
+import { Users, Plus, Check } from 'lucide-react'
 
 interface SlotPickerProps {
   activity: Activity
   day: string
-  onSelect: (slot: Slot) => void
-  selectedSlotId?: string
+  onToggle: (slot: Slot) => void
+  selectedSlotIds?: string[]
 }
 
-export function SlotPicker({ activity, day, onSelect, selectedSlotId }: SlotPickerProps) {
+export function SlotPicker({ activity, day, onToggle, selectedSlotIds = [] }: SlotPickerProps) {
   const [slots, setSlots] = useState<Slot[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
   useEffect(() => {
     fetchSlots()
-
-    // Realtime subscription
     const channel = supabase
       .channel(`slots-${activity.id}-${day}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'slots',
-          filter: `activity_id=eq.${activity.id}`,
-        },
-        () => fetchSlots()
-      )
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'slots', filter: `activity_id=eq.${activity.id}` }, () => fetchSlots())
       .subscribe()
-
     return () => { supabase.removeChannel(channel) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activity.id, day])
@@ -53,10 +41,7 @@ export function SlotPicker({ activity, day, onSelect, selectedSlotId }: SlotPick
     setLoading(false)
   }
 
-  const isPast = (slot: Slot) => {
-    const slotDateTime = new Date(`${slot.day}T${slot.start_time}`)
-    return slotDateTime < new Date()
-  }
+  const isPast = (slot: Slot) => new Date(`${slot.day}T${slot.start_time}`) < new Date()
 
   const morningSlots = slots.filter(s => !s.is_break && getMorningAfternoon(s.start_time) === 'morning')
   const afternoonSlots = slots.filter(s => !s.is_break && getMorningAfternoon(s.start_time) === 'afternoon')
@@ -71,127 +56,82 @@ export function SlotPicker({ activity, day, onSelect, selectedSlotId }: SlotPick
     )
   }
 
-  const renderSlotGroup = (label: string, groupSlots: Slot[]) => {
-    if (groupSlots.length === 0) return null
-    return (
-      <div>
-        <h3 className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-widest mb-3">
-          {label}
-        </h3>
-        <div className="space-y-2">
-          {groupSlots.map(slot => {
-            const available = slot.capacity - slot.booked_count
-            const status = getAvailabilityStatus(available, slot.capacity)
-            const past = isPast(slot)
-            const isFull = available === 0 || past
-            const isSelected = slot.id === selectedSlotId
-            const fillPct = ((slot.booked_count / slot.capacity) * 100).toFixed(0)
+  const renderSlot = (slot: Slot) => {
+    const available = slot.capacity - slot.booked_count
+    const status = getAvailabilityStatus(available, slot.capacity)
+    const past = isPast(slot)
+    const isFull = available === 0 || past
+    const isSelected = selectedSlotIds.includes(slot.id)
+    const fillPct = ((slot.booked_count / slot.capacity) * 100).toFixed(0)
 
-            return (
-              <motion.button
-                key={slot.id}
-                onClick={() => !isFull && onSelect(slot)}
-                disabled={isFull}
-                whileHover={!isFull ? { scale: 1.01 } : {}}
-                whileTap={!isFull ? { scale: 0.99 } : {}}
-                className={[
-                  'w-full text-left p-4 rounded-xl border transition-all duration-200',
-                  past
-                    ? 'opacity-30 cursor-not-allowed bg-[var(--bg-card)] border-[var(--border)]'
-                    : isFull
-                    ? 'opacity-40 cursor-not-allowed bg-[var(--bg-card)] border-[var(--border)]'
-                    : isSelected
-                    ? 'bg-[var(--accent)] border-[var(--accent)] cursor-pointer'
-                    : 'bg-[var(--bg-card)] border-[var(--border)] hover:border-[var(--accent)] cursor-pointer',
-                ].join(' ')}
+    return (
+      <motion.button
+        key={slot.id}
+        onClick={() => !isFull && onToggle(slot)}
+        disabled={isFull}
+        whileHover={!isFull ? { scale: 1.01 } : {}}
+        whileTap={!isFull ? { scale: 0.99 } : {}}
+        className={[
+          'w-full text-left p-4 rounded-xl border transition-all duration-200',
+          past
+            ? 'opacity-30 cursor-not-allowed bg-[var(--bg-card)] border-[var(--border)]'
+            : isFull
+            ? 'opacity-40 cursor-not-allowed bg-[var(--bg-card)] border-[var(--border)]'
+            : isSelected
+            ? 'border-[var(--accent)] cursor-pointer'
+            : 'bg-[var(--bg-card)] border-[var(--border)] hover:border-[var(--accent)] cursor-pointer',
+        ].join(' ')}
+        style={isSelected ? { backgroundColor: `${activity.color}15`, borderColor: activity.color } : {}}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+              past ? 'bg-gray-600' : isFull ? 'bg-red-500' : status.variant === 'low' ? 'bg-yellow-500' : 'bg-green-500'
+            }`} />
+            <span className="font-semibold text-sm">{formatTime(slot.start_time)}</span>
+            {past && <span className="text-[var(--text-secondary)] text-xs">Passé</span>}
+          </div>
+          <div className="flex items-center gap-2">
+            {activity.name === 'bapteme' && (
+              <span className={`text-xs flex items-center gap-1 ${status.color}`}>
+                <Users size={12} />
+                {isFull ? 'Complet' : `${available}/${slot.capacity}`}
+              </span>
+            )}
+            {!isFull && (
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+                style={isSelected
+                  ? { backgroundColor: activity.color }
+                  : { backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border)' }
+                }
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                      past ? 'bg-gray-600' : isFull ? 'bg-red-500' : status.variant === 'low' ? 'bg-yellow-500' : 'bg-green-500'
-                    }`} />
-                    <span className="font-semibold text-sm">
-                      {formatTime(slot.start_time)}
-                    </span>
-                    {past && <span className="text-[var(--text-secondary)] text-xs">Passé</span>}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {activity.name === 'bapteme' && (
-                      <span className={`text-xs flex items-center gap-1 ${
-                        isSelected ? 'text-white' : status.color
-                      }`}>
-                        <Users size={12} />
-                        {isFull ? 'Complet' : `${available}/${slot.capacity}`}
-                      </span>
-                    )}
-                    {!isFull && !isSelected && (
-                      <span className="text-[var(--text-secondary)] text-xs font-medium">
-                        Choisir
-                      </span>
-                    )}
-                    {isSelected && (
-                      <span className="text-white text-xs font-semibold">✓ Sélectionné</span>
-                    )}
-                  </div>
-                </div>
-                {activity.name === 'bapteme' && !isFull && (
-                  <div className="mt-2 h-1 rounded-full bg-black/30 overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-300"
-                      style={{
-                        width: `${fillPct}%`,
-                        background: isSelected ? 'rgba(255,255,255,0.5)' : activity.color,
-                      }}
-                    />
-                  </div>
-                )}
-              </motion.button>
-            )
-          })}
+                {isSelected
+                  ? <Check size={14} className="text-white" />
+                  : <Plus size={14} className="text-[var(--text-secondary)]" />
+                }
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+        {activity.name === 'bapteme' && !isFull && (
+          <div className="mt-2 h-1 rounded-full bg-[var(--bg-elevated)] overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-300"
+              style={{ width: `${fillPct}%`, backgroundColor: activity.color }}
+            />
+          </div>
+        )}
+      </motion.button>
     )
   }
 
   if (activity.name === 'carbooling') {
     return (
       <div>
-        <h3 className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-widest mb-3">
-          Animation Midi
-        </h3>
+        <h3 className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-widest mb-3">Animation Midi</h3>
         <div className="space-y-2">
-          {slots.filter(s => !s.is_break).map(slot => {
-            const available = slot.capacity - slot.booked_count
-            const isFull = available === 0
-            const isSelected = slot.id === selectedSlotId
-            return (
-              <motion.button
-                key={slot.id}
-                onClick={() => !isFull && onSelect(slot)}
-                disabled={isFull}
-                whileHover={!isFull ? { scale: 1.01 } : {}}
-                className={[
-                  'w-full text-left p-4 rounded-xl border transition-all duration-200',
-                  isFull
-                    ? 'opacity-40 cursor-not-allowed bg-[var(--bg-card)] border-[var(--border)]'
-                    : isSelected
-                    ? 'bg-[var(--accent)] border-[var(--accent)]'
-                    : 'bg-[var(--bg-card)] border-[var(--border)] hover:border-[var(--accent)]',
-                ].join(' ')}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full ${isFull ? 'bg-red-500' : 'bg-green-500'}`} />
-                    <span className="font-semibold text-sm">{formatTime(slot.start_time)}</span>
-                    <span className="text-[var(--text-secondary)] text-xs">4 min</span>
-                  </div>
-                  <span className={`text-xs ${isFull ? 'text-red-400' : isSelected ? 'text-white font-semibold' : 'text-green-400'}`}>
-                    {isFull ? 'Pris' : isSelected ? '✓ Sélectionné' : 'Disponible'}
-                  </span>
-                </div>
-              </motion.button>
-            )
-          })}
+          {slots.filter(s => !s.is_break).map(renderSlot)}
         </div>
       </div>
     )
@@ -199,8 +139,18 @@ export function SlotPicker({ activity, day, onSelect, selectedSlotId }: SlotPick
 
   return (
     <div className="space-y-6">
-      {renderSlotGroup('Matin', morningSlots)}
-      {renderSlotGroup('Après-midi', afternoonSlots.filter(s => s.start_time >= '13:00:00'))}
+      {morningSlots.length > 0 && (
+        <div>
+          <h3 className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-widest mb-3">Matin</h3>
+          <div className="space-y-2">{morningSlots.map(renderSlot)}</div>
+        </div>
+      )}
+      {afternoonSlots.filter(s => s.start_time >= '13:00:00').length > 0 && (
+        <div>
+          <h3 className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-widest mb-3">Après-midi</h3>
+          <div className="space-y-2">{afternoonSlots.filter(s => s.start_time >= '13:00:00').map(renderSlot)}</div>
+        </div>
+      )}
     </div>
   )
 }

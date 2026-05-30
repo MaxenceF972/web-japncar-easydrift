@@ -4,27 +4,33 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Lock, AlertCircle, Loader2 } from 'lucide-react'
-import { formatTime, formatPrice, getDayLabel } from '@/lib/utils'
-import type { ActivityName } from '@/lib/supabase/types'
+import { formatPrice } from '@/lib/utils'
 
-const ACTIVITY_LABELS: Record<ActivityName, string> = {
-  bapteme: 'Baptême EASYDRIFT',
-  conduite: 'Session Conduite',
-  carbooling: 'Car Bowling / Football',
+interface SlotDraft {
+  slotId: string
+  day: string
+  startTime: string
+  endTime: string
+  firstName: string
+  lastName: string
 }
 
-const ACTIVITY_PRICES: Record<ActivityName, number> = {
-  bapteme: 5000,
-  conduite: 5000,
-  carbooling: 2500,
+interface Draft {
+  activityId: string
+  activityName: string
+  activityLabel: string
+  price: number
+  slots: SlotDraft[]
+  email: string
+  phone: string | null
 }
 
 export default function PaiementPage() {
   const router = useRouter()
   const params = useParams()
-  const activityName = params.activity as ActivityName
+  const activityName = params.activity as string
 
-  const [draft, setDraft] = useState<any>(null)
+  const [draft, setDraft] = useState<Draft | null>(null)
   const [checkoutId, setCheckoutId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -37,24 +43,20 @@ export default function PaiementPage() {
   useEffect(() => {
     const raw = sessionStorage.getItem('easydrift_booking_draft')
     if (!raw) { router.replace(`/reserver/${activityName}`); return }
-    const d = JSON.parse(raw)
-    if (!d.firstName) { router.replace(`/reserver/${activityName}/infos`); return }
+    const d: Draft = JSON.parse(raw)
+    if (!d.slots?.length || !d.email) { router.replace(`/reserver/${activityName}/infos`); return }
     setDraft(d)
     createCheckout(d)
   }, [])
 
-  // Monter le widget uniquement après que le div soit rendu dans le DOM
   useEffect(() => {
     if (!checkoutId || loading || widgetMountedRef.current) return
     widgetMountedRef.current = true
     loadSumUpWidget(checkoutId)
   }, [checkoutId, loading])
 
-  async function createCheckout(d: any) {
-    if (retryCountRef.current >= 3) {
-      setError('Trop de tentatives. Rafraîchissez la page.')
-      return
-    }
+  async function createCheckout(d: Draft) {
+    if (retryCountRef.current >= 3) { setError('Trop de tentatives. Rafraîchissez la page.'); return }
     retryCountRef.current += 1
     setLoading(true)
     setError(null)
@@ -66,9 +68,9 @@ export default function PaiementPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           activityName: d.activityName,
-          slotId: d.slotId,
-          firstName: d.firstName,
-          lastName: d.lastName,
+          slots: d.slots,
+          firstName: d.slots[0].firstName,
+          lastName: d.slots[0].lastName,
           email: d.email,
         }),
       })
@@ -85,11 +87,9 @@ export default function PaiementPage() {
   function loadSumUpWidget(id: string) {
     const existing = document.getElementById('sumup-sdk')
     if (existing) existing.remove()
-
     widgetTimeoutRef.current = setTimeout(() => {
       setError('Le service de paiement ne répond pas. Vérifiez votre connexion et réessayez.')
     }, 12000)
-
     const script = document.createElement('script')
     script.id = 'sumup-sdk'
     script.src = 'https://gateway.sumup.com/gateway/ecom/card/v2/sdk.js'
@@ -99,12 +99,7 @@ export default function PaiementPage() {
       // @ts-ignore
       if (window.SumUpCard) {
         // @ts-ignore
-        window.SumUpCard.mount({
-          id: 'sumup-card',
-          checkoutId: id,
-          onResponse: handleSumUpResponse,
-          locale: 'fr-FR',
-        })
+        window.SumUpCard.mount({ id: 'sumup-card', checkoutId: id, onResponse: handleSumUpResponse, locale: 'fr-FR' })
       }
     }
     script.onerror = () => {
@@ -127,31 +122,29 @@ export default function PaiementPage() {
         const data = await resp.json()
         if (!resp.ok) throw new Error(data.error)
         sessionStorage.removeItem('easydrift_booking_draft')
-        router.push(`/confirmation/${data.bookingId}`)
+        if (data.bookingIds?.length > 1) {
+          router.push(`/confirmation/multi?ids=${data.bookingIds.join(',')}`)
+        } else {
+          router.push(`/confirmation/${data.bookingIds[0]}`)
+        }
       } catch (e: any) {
         successProcessingRef.current = false
         setError(`Paiement reçu mais erreur : ${e.message || 'inconnue'}. Contactez-nous.`)
       }
     } else if (type === 'error') {
-      if (!successProcessingRef.current) {
-        setError('Le paiement a échoué. Veuillez réessayer.')
-      }
+      if (!successProcessingRef.current) setError('Le paiement a échoué. Veuillez réessayer.')
     }
   }
 
   if (!draft) return null
 
-  const price = ACTIVITY_PRICES[draft.activityName as ActivityName]
+  const totalPrice = draft.slots.length * draft.price
 
   return (
     <main className="min-h-dvh pb-10">
-      {/* Header */}
       <div className="sticky top-0 z-10 bg-[var(--bg-primary)]/90 backdrop-blur border-b border-[var(--border)]">
         <div className="max-w-lg mx-auto px-5 py-4 flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
-            className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] flex items-center justify-center"
-          >
+          <button onClick={() => router.back()} className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] flex items-center justify-center">
             <ArrowLeft size={18} />
           </button>
           <h1 className="font-bebas text-xl text-[var(--text-primary)]">Paiement sécurisé</h1>
@@ -164,35 +157,26 @@ export default function PaiementPage() {
         <div className="card p-4">
           <div className="flex justify-between items-start">
             <div>
-              <p className="font-semibold text-[var(--text-primary)]">
-                {ACTIVITY_LABELS[draft.activityName as ActivityName]}
-              </p>
+              <p className="font-semibold text-[var(--text-primary)]">{draft.activityLabel}</p>
               <p className="text-[var(--text-secondary)] text-sm">
-                {getDayLabel(draft.day)} · {formatTime(draft.startTime)}
-              </p>
-              <p className="text-[var(--text-secondary)] text-sm mt-1">
-                {draft.firstName} {draft.lastName}
+                {draft.slots.length} créneau{draft.slots.length > 1 ? 'x' : ''} · {draft.slots[0].firstName} {draft.slots[0].lastName}
+                {draft.slots.length > 1 && ` + ${draft.slots.length - 1} autre${draft.slots.length > 2 ? 's' : ''}`}
               </p>
             </div>
             <div className="text-right">
-              <span className="font-bebas text-3xl text-[var(--accent)]">{formatPrice(price)}</span>
+              <span className="font-bebas text-3xl text-[var(--accent)]">{formatPrice(totalPrice)}</span>
               <p className="text-[var(--text-secondary)] text-xs">TTC</p>
             </div>
           </div>
         </div>
 
-        {/* Widget SumUp */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16 gap-4">
             <Loader2 size={32} className="text-[var(--accent)] animate-spin" />
             <p className="text-[var(--text-secondary)] text-sm">Chargement du paiement...</p>
           </div>
         ) : error ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="card p-5 border-red-500/30"
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card p-5 border-red-500/30">
             <div className="flex items-start gap-3">
               <AlertCircle size={20} className="text-red-400 flex-shrink-0 mt-0.5" />
               <div>
@@ -200,20 +184,10 @@ export default function PaiementPage() {
                 <p className="text-[var(--text-secondary)] text-sm mt-1">{error}</p>
               </div>
             </div>
-            <button
-              onClick={() => draft && createCheckout(draft)}
-              className="btn-cta w-full mt-4"
-            >
-              Réessayer
-            </button>
+            <button onClick={() => draft && createCheckout(draft)} className="btn-cta w-full mt-4">Réessayer</button>
           </motion.div>
         ) : (
-          <div
-            ref={sumupContainerRef}
-            id="sumup-card"
-            className="min-h-[300px]"
-            style={{ colorScheme: 'dark' }}
-          />
+          <div ref={sumupContainerRef} id="sumup-card" className="min-h-[300px]" style={{ colorScheme: 'dark' }} />
         )}
 
         <p className="text-[var(--text-secondary)] text-xs text-center flex items-center justify-center gap-1.5">
