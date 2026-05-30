@@ -24,6 +24,7 @@ export function ReservationsClient({ bookings: initialBookings }: Props) {
   const [filterActivity, setFilterActivity] = useState('all')
   const [filterPayment, setFilterPayment] = useState('all')
   const [filterCheckin, setFilterCheckin] = useState('all')
+  const [filterDay, setFilterDay] = useState('2026-05-31')
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
   const [bookings, setBookings] = useState(initialBookings)
   const [refreshing, setRefreshing] = useState(false)
@@ -59,6 +60,7 @@ export function ReservationsClient({ bookings: initialBookings }: Props) {
       if (filterPayment !== 'all' && b.payment_status !== filterPayment) return false
       if (filterCheckin === 'yes' && !b.checked_in) return false
       if (filterCheckin === 'no' && b.checked_in) return false
+      if (filterDay !== 'all' && (b as any).slot?.day !== filterDay) return false
       return true
     })
   }, [bookings, search, filterActivity, filterPayment, filterCheckin])
@@ -124,6 +126,17 @@ export function ReservationsClient({ bookings: initialBookings }: Props) {
             {activities.map(([id, label]) => (
               <option key={id} value={id}>{label}</option>
             ))}
+          </select>
+
+          <select
+            className="input-field text-sm py-2 flex-shrink-0"
+            style={{ width: 'auto', minWidth: 110 }}
+            value={filterDay}
+            onChange={e => setFilterDay(e.target.value)}
+          >
+            <option value="all">Tous les jours</option>
+            <option value="2026-05-30">Samedi</option>
+            <option value="2026-05-31">Dimanche</option>
           </select>
 
           <select
