@@ -49,6 +49,23 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
   const [saveLoading, setSaveLoading] = useState(false)
   const [saveError, setSaveError] = useState('')
 
+  const [now, setNow] = useState(() => new Date())
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60_000)
+    return () => clearInterval(t)
+  }, [])
+
+  function isSlotPast(slotDay: string, startTime: string) {
+    const today = now.toISOString().split('T')[0]
+    if (slotDay < today) return true
+    if (slotDay > today) return false
+    const [h, m] = startTime.split(':').map(Number)
+    const slotDate = new Date(now)
+    slotDate.setHours(h, m, 0, 0)
+    return now > slotDate
+  }
+
   const supabase = createClient()
   const currentDay = eventDays[selectedDay]
 
@@ -219,9 +236,10 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
                   const checkedIn = activeBookings.filter(b => b.checked_in).length
                   const fillPct = slot.capacity > 0 ? (activeBookings.length / slot.capacity) * 100 : 0
                   const isFull = activeBookings.length >= slot.capacity
+                  const past = isSlotPast(currentDay, slot.start_time)
 
                   return (
-                    <div key={slot.id} className="px-4 py-3">
+                    <div key={slot.id} className={`px-4 py-3 ${past ? 'opacity-40' : ''}`}>
                       <div className="flex items-center justify-between mb-1.5">
                         <div className="flex items-center gap-2">
                           <span className="font-bebas text-base text-[var(--text-primary)]">{formatTime(slot.start_time)}</span>
