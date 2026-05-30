@@ -15,7 +15,7 @@ export default async function MultiConfirmationPage({ searchParams }: Props) {
   const { data: bookings } = await supabase
     .from('bookings')
     .select('*, slot:slots(*), activity:activities(*)')
-    .in('id', ids)
+    .in('id', ids) as { data: any[] | null }
 
   if (!bookings?.length) notFound()
 
