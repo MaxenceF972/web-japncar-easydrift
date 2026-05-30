@@ -20,9 +20,7 @@ export function SlotChooserClient({ activity, eventDays }: Props) {
 
   const isDayPast = (date: string) => new Date().toISOString().split('T')[0] > date
 
-  const [selectedDay, setSelectedDay] = useState<'saturday' | 'sunday'>(
-    isDayPast(eventDays.saturday) ? 'sunday' : 'saturday'
-  )
+  const [selectedDay, setSelectedDay] = useState<'saturday' | 'sunday'>('sunday')
   const [basket, setBasket] = useState<Record<string, BasketEntry>>({})
 
   const days = [

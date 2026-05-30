@@ -28,7 +28,7 @@ const PAYMENT_LABELS: Record<string, string> = {
 
 export function PlanningClient({ activities: initialActivities, eventDays }: Props) {
   const [activities, setActivities] = useState<Activity[]>(initialActivities)
-  const [selectedDay, setSelectedDay] = useState<'saturday' | 'sunday'>('saturday')
+  const [selectedDay, setSelectedDay] = useState<'saturday' | 'sunday'>('sunday')
   const [allSlots, setAllSlots] = useState<Record<string, (Slot & { bookings: Booking[] })[]>>({})
   const [loading, setLoading] = useState(true)
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
