@@ -144,8 +144,8 @@ export function InscrireClient({ activities }: Props) {
           <SlotPicker
             activity={selectedActivity}
             day={EVENT_DAYS[selectedDay]}
-            onSelect={setSelectedSlot}
-            selectedSlotId={selectedSlot?.id}
+            onToggle={slot => setSelectedSlot(prev => prev?.id === slot.id ? null : slot)}
+            selectedSlotIds={selectedSlot ? [selectedSlot.id] : []}
           />
 
           {selectedSlot && (
