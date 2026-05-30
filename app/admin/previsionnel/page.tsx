@@ -20,7 +20,7 @@ const CHARGES = [
   { poste: 'Anneaux — voiture Conduite',               montant: 700 },
   { poste: 'Essence Baptême 2J',                       montant: 800 },
   { poste: 'Essence Conduite 2J',                      montant: 250 },
-  { poste: 'Location Mégane Booling',                  montant: 180 },
+  { poste: 'Location Mégane Bowling',                  montant: 180 },
   { poste: 'Bouffe',                                   montant: 300 },
   { poste: 'Équipe',                                   montant: 1000 },
 ]
@@ -29,8 +29,8 @@ const ACTIVITES = [
   { nom: 'Baptême — Samedi', couleur: '#F47B20', personnes: 176, prix: 50, detail: '44 créneaux × 4 pers.' },
   { nom: 'Baptême — Dimanche', couleur: '#E8601C', personnes: 176, prix: 50, detail: '44 créneaux × 4 pers.' },
   { nom: 'Session Conduite', couleur: '#E67E22', personnes: 122, prix: 50, detail: '61 passages/j × 2j × 1 pilote' },
-  { nom: 'Car Booling / Football', couleur: '#8E44AD', personnes: 14, prix: 25, detail: '7 créneaux/j × 2j × 1 pilote' },
-  { nom: 'Passager Car Booling', couleur: '#6C3483', personnes: 42, prix: 10, detail: '7 créneaux/j × 2j × 3 places — inscription sur place uniquement' },
+  { nom: 'Car Bowling / Football', couleur: '#8E44AD', personnes: 14, prix: 25, detail: '7 créneaux/j × 2j × 1 pilote' },
+  { nom: 'Passager Car Bowling', couleur: '#6C3483', personnes: 42, prix: 10, detail: '7 créneaux/j × 2j × 3 places — inscription sur place uniquement' },
 ]
 
 const SCENARIOS = [25, 50, 75, 100]
@@ -237,7 +237,7 @@ export default function PrevisionnelPage() {
                   <span className="text-[var(--text-primary)] font-medium">{formatEur(utacCounts.conduite * UTAC_RATE)}</span>
                 </div>
                 <div className="flex justify-between text-sm py-1 border-b border-[var(--border)]/50">
-                  <span className="text-[var(--text-secondary)]">Car Booling ({utacCounts.carbooling} pers.)</span>
+                  <span className="text-[var(--text-secondary)]">Car Bowling ({utacCounts.carbooling} pers.)</span>
                   <span className="text-[var(--text-primary)] font-medium">{formatEur(utacCounts.carbooling * UTAC_RATE)}</span>
                 </div>
                 <div className="flex justify-between text-sm py-1.5 font-semibold">

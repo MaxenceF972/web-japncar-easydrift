@@ -10,7 +10,7 @@ import type { ActivityName } from '@/lib/supabase/types'
 const ACTIVITY_LABELS: Record<ActivityName, string> = {
   bapteme: 'Baptême EASYDRIFT',
   conduite: 'Session Conduite',
-  carbooling: 'Car Booling / Football',
+  carbooling: 'Car Bowling / Football',
 }
 
 const ACTIVITY_PRICES: Record<ActivityName, number> = {
