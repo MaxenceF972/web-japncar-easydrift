@@ -200,6 +200,55 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
         </div>
       )}
 
+      {/* Vue fusionnée Baptême + Conduite — créneaux occupés uniquement */}
+      {(() => {
+        const bapteme = activities.find(a => a.name === 'bapteme')
+        const conduite = activities.find(a => a.name === 'conduite')
+        const merged = [
+          ...(bapteme ? (allSlots[bapteme.id] || []).filter(s => !s.is_break).map(s => ({ ...s, activity: bapteme })) : []),
+          ...(conduite ? (allSlots[conduite.id] || []).filter(s => !s.is_break).map(s => ({ ...s, activity: conduite })) : []),
+        ]
+          .filter(s => (s as any).bookings.some((b: Booking) => b.payment_status !== 'cancelled'))
+          .sort((a, b) => a.start_time.localeCompare(b.start_time))
+
+        if (merged.length === 0) return null
+
+        return (
+          <div className="card overflow-hidden mb-4">
+            <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
+              <span className="font-bebas text-lg text-[var(--text-primary)]">Créneaux occupés — Baptême & Conduite</span>
+              <span className="text-[var(--text-secondary)] text-xs">{merged.length} créneau{merged.length > 1 ? 'x' : ''}</span>
+            </div>
+            <div className="divide-y divide-[var(--border)] max-h-64 overflow-y-auto">
+              {merged.map(slot => {
+                const bookings = (slot as any).bookings.filter((b: Booking) => b.payment_status !== 'cancelled')
+                const checkedIn = bookings.filter((b: Booking) => b.checked_in).length
+                return (
+                  <div key={slot.id} className="px-4 py-2.5 flex items-center gap-3">
+                    <div
+                      className="w-1.5 h-6 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: (slot as any).activity.color }}
+                    />
+                    <span className="font-bebas text-base text-[var(--text-primary)] w-14 flex-shrink-0">{formatTime(slot.start_time)}</span>
+                    <span className="text-[var(--text-secondary)] text-xs w-20 flex-shrink-0">{(slot as any).activity.label.replace('EASYDRIFT', '').replace('Session ', '').trim()}</span>
+                    <div className="flex flex-wrap gap-1 flex-1">
+                      {bookings.map((b: Booking) => (
+                        <span key={b.id} className={`text-[10px] px-1.5 py-0.5 rounded ${b.checked_in ? 'bg-green-500/20 text-green-400' : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)]'}`}>
+                          {b.first_name} {b.last_name.charAt(0)}.{b.checked_in ? ' ✓' : ''}
+                        </span>
+                      ))}
+                    </div>
+                    {checkedIn > 0 && (
+                      <span className="text-green-400 text-xs flex-shrink-0">{checkedIn}/{bookings.length}</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* 4 sections grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {activities.map(activity => {
