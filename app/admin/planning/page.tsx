@@ -8,8 +8,13 @@ export default async function PlanningPage() {
   const supabase = createServiceClient()
 
   const [activitiesResult] = await Promise.all([
-    supabase.from('activities').select('*').order('price'),
+    supabase.from('activities').select('*'),
   ])
+
+  const ORDER = ['bapteme', 'conduite', 'carbooling', 'carbooling_passager']
+  const activities = ((activitiesResult.data || []) as any[]).sort(
+    (a, b) => ORDER.indexOf(a.name) - ORDER.indexOf(b.name)
+  )
 
   return (
     <PlanningClient
