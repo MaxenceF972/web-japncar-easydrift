@@ -15,7 +15,15 @@ interface Props {
 
 export function SlotChooserClient({ activity, eventDays }: Props) {
   const router = useRouter()
-  const [selectedDay, setSelectedDay] = useState<'saturday' | 'sunday'>('saturday')
+
+  const isDayPast = (date: string) => {
+    const today = new Date().toISOString().split('T')[0]
+    return date < today
+  }
+
+  const [selectedDay, setSelectedDay] = useState<'saturday' | 'sunday'>(
+    isDayPast(eventDays.saturday) ? 'sunday' : 'saturday'
+  )
   const [basket, setBasket] = useState<Slot[]>([])
 
   const days = [
@@ -137,21 +145,27 @@ export function SlotChooserClient({ activity, eventDays }: Props) {
             Choisissez votre jour
           </h2>
           <div className="grid grid-cols-2 gap-3">
-            {days.map(({ key, label, date }) => (
-              <button
-                key={key}
-                onClick={() => setSelectedDay(key)}
-                className={[
-                  'p-4 rounded-xl border transition-all duration-200 text-left',
-                  selectedDay === key
-                    ? 'bg-[var(--accent)] border-[var(--accent)]'
-                    : 'bg-[var(--bg-card)] border-[var(--border)] hover:border-[var(--accent)]',
-                ].join(' ')}
-              >
-                <p className="font-bebas text-xl leading-none">{label}</p>
-                <p className="text-xs mt-1 opacity-70">{formatDate(date)}</p>
-              </button>
-            ))}
+            {days.map(({ key, label, date }) => {
+              const past = isDayPast(date)
+              return (
+                <button
+                  key={key}
+                  onClick={() => !past && setSelectedDay(key)}
+                  disabled={past}
+                  className={[
+                    'p-4 rounded-xl border transition-all duration-200 text-left',
+                    past
+                      ? 'opacity-40 cursor-not-allowed bg-[var(--bg-card)] border-[var(--border)]'
+                      : selectedDay === key
+                      ? 'bg-[var(--accent)] border-[var(--accent)]'
+                      : 'bg-[var(--bg-card)] border-[var(--border)] hover:border-[var(--accent)]',
+                  ].join(' ')}
+                >
+                  <p className="font-bebas text-xl leading-none">{label}</p>
+                  <p className="text-xs mt-1 opacity-70">{past ? 'Journée terminée' : formatDate(date)}</p>
+                </button>
+              )
+            })}
           </div>
         </div>
 
