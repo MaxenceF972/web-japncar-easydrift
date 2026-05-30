@@ -42,6 +42,8 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
 
   // Delete slot
   const [deletingSlotId, setDeletingSlotId] = useState<string | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   // Edit price modal
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null)
@@ -104,7 +106,7 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
   }
 
   async function handleDeleteSlot(slotId: string) {
-    if (!confirm('Supprimer ce créneau ?')) return
+    setDeleteError(null)
     setDeletingSlotId(slotId)
     const res = await fetch('/api/admin/slots', {
       method: 'DELETE',
@@ -113,7 +115,8 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
     })
     const json = await res.json()
     setDeletingSlotId(null)
-    if (!res.ok) alert(json.error || 'Erreur lors de la suppression')
+    setConfirmDeleteId(null)
+    if (!res.ok) setDeleteError(json.error || 'Erreur lors de la suppression')
     else fetchAllSlots()
   }
 
@@ -189,6 +192,14 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
         ))}
       </div>
 
+      {/* Error banner */}
+      {deleteError && (
+        <div className="mb-4 flex items-center justify-between gap-3 p-3 rounded-xl border border-red-500/30 bg-red-500/10">
+          <p className="text-red-400 text-sm">{deleteError}</p>
+          <button onClick={() => setDeleteError(null)}><X size={16} className="text-red-400" /></button>
+        </div>
+      )}
+
       {/* 4 sections grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {activities.map(activity => {
@@ -256,13 +267,27 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
                             </div>
                           )}
                         </div>
-                        <button
-                          onClick={() => handleDeleteSlot(slot.id)}
-                          disabled={deletingSlotId === slot.id}
-                          className="w-5 h-5 rounded flex items-center justify-center hover:text-red-400 transition-colors disabled:opacity-40"
-                        >
-                          <Trash2 size={11} className="text-[var(--text-secondary)]" />
-                        </button>
+                        {confirmDeleteId === slot.id ? (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleDeleteSlot(slot.id)}
+                              disabled={deletingSlotId === slot.id}
+                              className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white disabled:opacity-40"
+                            >
+                              {deletingSlotId === slot.id ? '...' : 'Supprimer'}
+                            </button>
+                            <button onClick={() => setConfirmDeleteId(null)} className="px-1 py-0.5 rounded text-[10px] text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                              Annuler
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmDeleteId(slot.id)}
+                            className="w-5 h-5 rounded flex items-center justify-center hover:text-red-400 transition-colors"
+                          >
+                            <Trash2 size={11} className="text-[var(--text-secondary)]" />
+                          </button>
+                        )}
                       </div>
 
                       {/* Fill bar */}
