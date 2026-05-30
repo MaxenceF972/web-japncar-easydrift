@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { ChevronDown, MapPin, Clock, Shield, Ticket, Send, Loader2, CheckCircle } from 'lucide-react'
+import { ChevronDown, MapPin, Clock, Shield, Ticket, Send, Loader2, CheckCircle, Trash2 } from 'lucide-react'
 import type { Activity } from '@/lib/supabase/types'
 import { ActivityCard } from '@/components/client/ActivityCard'
 
@@ -165,15 +165,26 @@ function CartBanner() {
 
   if (!cartTotal) return null
 
+  function clearCart() {
+    sessionStorage.removeItem('easydrift_cart')
+    sessionStorage.removeItem('easydrift_booking_draft')
+    setCartTotal(null)
+  }
+
   return (
     <motion.div
       initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
       className="fixed top-0 left-0 right-0 z-50 bg-[var(--accent)] px-5 py-3"
     >
       <div className="max-w-lg mx-auto flex items-center justify-between">
-        <p className="text-white text-sm font-semibold">
-          🛒 {cartTotal.qty} place{cartTotal.qty > 1 ? 's' : ''} dans votre panier
-        </p>
+        <div className="flex items-center gap-3">
+          <p className="text-white text-sm font-semibold">
+            🛒 {cartTotal.qty} place{cartTotal.qty > 1 ? 's' : ''} dans votre panier
+          </p>
+          <button onClick={clearCart} className="text-white/70 hover:text-white transition-colors" title="Vider le panier">
+            <Trash2 size={15} />
+          </button>
+        </div>
         <a
           href={`/reserver/${cartTotal.activityName}/infos`}
           onClick={() => {
