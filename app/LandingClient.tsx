@@ -145,11 +145,64 @@ interface Props {
   activities: Activity[]
 }
 
+function CartBanner() {
+  const [cartTotal, setCartTotal] = useState<{ qty: number; price: number; activityName: string } | null>(null)
+
+  useEffect(() => {
+    try {
+      const cart = JSON.parse(sessionStorage.getItem('easydrift_cart') || '{}')
+      let qty = 0; let price = 0; let activityName = ''
+      for (const a of Object.values(cart) as any[]) {
+        for (const e of Object.values(a.basket) as any[]) {
+          qty += e.qty
+          price += e.qty * a.price
+          activityName = a.activityName
+        }
+      }
+      if (qty > 0) setCartTotal({ qty, price, activityName })
+    } catch {}
+  }, [])
+
+  if (!cartTotal) return null
+
+  return (
+    <motion.div
+      initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+      className="fixed top-0 left-0 right-0 z-50 bg-[var(--accent)] px-5 py-3"
+    >
+      <div className="max-w-lg mx-auto flex items-center justify-between">
+        <p className="text-white text-sm font-semibold">
+          🛒 {cartTotal.qty} place{cartTotal.qty > 1 ? 's' : ''} dans votre panier
+        </p>
+        <a
+          href={`/reserver/${cartTotal.activityName}/infos`}
+          onClick={() => {
+            const cart = JSON.parse(sessionStorage.getItem('easydrift_cart') || '{}')
+            const slots: any[] = []
+            for (const a of Object.values(cart) as any[]) {
+              for (const { slot, qty } of Object.values(a.basket) as any[]) {
+                for (let i = 0; i < qty; i++) {
+                  slots.push({ slotId: slot.id, day: slot.day, startTime: slot.start_time, endTime: slot.end_time, activityId: a.activityId, activityName: a.activityName, activityLabel: a.activityLabel, price: a.price, firstName: '', lastName: '' })
+                }
+              }
+            }
+            sessionStorage.setItem('easydrift_booking_draft', JSON.stringify({ slots }))
+          }}
+          className="text-white text-sm font-bold underline"
+        >
+          Finaliser →
+        </a>
+      </div>
+    </motion.div>
+  )
+}
+
 export function LandingClient({ activities }: Props) {
   const activitiesRef = useRef<HTMLDivElement>(null)
 
   return (
     <main className="min-h-dvh">
+      <CartBanner />
       {/* HERO */}
       <section
         className="relative min-h-dvh flex flex-col items-center justify-center px-5 py-20 text-center overflow-hidden"

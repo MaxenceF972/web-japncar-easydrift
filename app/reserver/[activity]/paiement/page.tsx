@@ -11,15 +11,19 @@ interface SlotDraft {
   day: string
   startTime: string
   endTime: string
+  activityId?: string
+  activityName?: string
+  activityLabel?: string
+  price?: number
   firstName: string
   lastName: string
 }
 
 interface Draft {
-  activityId: string
-  activityName: string
-  activityLabel: string
-  price: number
+  activityId?: string
+  activityName?: string
+  activityLabel?: string
+  price?: number
   slots: SlotDraft[]
   email: string
   phone: string | null
@@ -138,7 +142,7 @@ export default function PaiementPage() {
 
   if (!draft) return null
 
-  const totalPrice = draft.slots.length * draft.price
+  const totalPrice = draft.slots.reduce((s, slot) => s + (slot.price ?? draft.price ?? 0), 0)
 
   return (
     <main className="min-h-dvh pb-10">

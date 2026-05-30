@@ -115,16 +115,20 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: isFailed ? 'Paiement refusé par la banque' : 'Paiement non confirmé' }, { status: 402 })
       }
       paymentStatus = 'paid'
-      amountPaid = PRICES[activityName as ActivityName]
+      amountPaid = null // will be set per slot
     }
-
-    // Récupérer l'activité
-    const { data: activity } = await supabase.from('activities').select('*').eq('id', activityId).single()
 
     // Créer un booking par créneau
     const bookingIds: string[] = []
 
     for (const s of slots) {
+      const slotActivityId = s.activityId || activityId
+      const slotActivityName = s.activityName || activityName
+      const slotPrice = s.price ?? PRICES[slotActivityName as ActivityName]
+
+      // Récupérer l'activité pour l'email
+      const { data: activity } = await supabase.from('activities').select('*').eq('id', slotActivityId).single()
+
       const { data: slot } = await supabase.from('slots').select('*').eq('id', s.slotId).single()
       if (!slot || slot.booked_count >= slot.capacity) {
         console.error(`Slot ${s.slotId} full or not found`)
@@ -135,12 +139,12 @@ export async function POST(req: NextRequest) {
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert({
-          slot_id: s.slotId, activity_id: activityId,
+          slot_id: s.slotId, activity_id: slotActivityId,
           first_name: s.firstName, last_name: s.lastName,
           email: email.toLowerCase(), phone: phone || null,
           payment_status: paymentStatus,
           sumup_checkout_id: checkoutId || null,
-          amount_paid: amountPaid,
+          amount_paid: paymentStatus === 'paid' ? slotPrice : amountPaid,
           ticket_code: ticketCode,
           booked_by_admin: false,
         })

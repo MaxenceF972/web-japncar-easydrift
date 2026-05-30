@@ -20,8 +20,12 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = createServiceClient() as any
-    const pricePerSlot = PRICES[activityName as ActivityName]
-    const totalAmount = pricePerSlot * slots.length
+    // Calcul du total : chaque slot peut avoir son propre prix (multi-activités)
+    let totalAmount = 0
+    for (const s of slots) {
+      const pricePerSlot = s.price ?? PRICES[activityName as ActivityName]
+      totalAmount += pricePerSlot
+    }
 
     // Vérifier disponibilité de tous les créneaux
     for (const s of slots) {
@@ -34,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     const reference = generateTicketCode()
     const description = slots.length > 1
-      ? `EASYDRIFT ${activityName} x${slots.length} - ${firstName} ${lastName}`
+      ? `EASYDRIFT x${slots.length} - ${firstName} ${lastName}`
       : `EASYDRIFT ${activityName} - ${firstName} ${lastName}`
 
     const checkout = await createSumUpCheckout({
