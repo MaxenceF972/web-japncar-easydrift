@@ -14,7 +14,7 @@ function formatTime(ms: number) {
 
 // Accepte : 45.23 (secondes) ou 1:23.45 (minutes:secondes)
 function parseTime(str: string): number | null {
-  const s = str.trim()
+  const s = str.trim().replace(',', '.')
   const withMin = s.match(/^(\d+):(\d{1,2})\.(\d{1,2})$/)
   if (withMin) {
     const [, min, sec, cs] = withMin.map(Number)
