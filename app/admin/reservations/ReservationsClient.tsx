@@ -63,7 +63,7 @@ export function ReservationsClient({ bookings: initialBookings }: Props) {
       if (filterDay !== 'all' && (b as any).slot?.day !== filterDay) return false
       return true
     })
-  }, [bookings, search, filterActivity, filterPayment, filterCheckin])
+  }, [bookings, search, filterActivity, filterPayment, filterCheckin, filterDay])
 
   function handleExportCSV() {
     const headers = ['Prénom', 'Nom', 'Email', 'Téléphone', 'Activité', 'Jour', 'Heure', 'Paiement', 'Check-in', 'Ticket', 'Créé le']
