@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { formatTime } from '@/lib/utils'
 import type { Activity, Slot, Booking } from '@/lib/supabase/types'
@@ -22,16 +22,20 @@ const PAYMENT_BADGES: Record<string, string> = {
   cancelled: 'badge-red',
 }
 
+const PAYMENT_LABELS: Record<string, string> = {
+  paid: 'En ligne', cash: 'Cash', terminal: 'Terminal', free: 'Gratuit', pending: '⏳', cancelled: 'Annulé',
+}
+
 export function PlanningClient({ activities: initialActivities, eventDays }: Props) {
   const [activities, setActivities] = useState<Activity[]>(initialActivities)
   const [selectedDay, setSelectedDay] = useState<'saturday' | 'sunday'>('saturday')
-  const [activeActivity, setActiveActivity] = useState(initialActivities[0]?.name || 'bapteme')
-  const [slots, setSlots] = useState<(Slot & { bookings: Booking[] })[]>([])
+  const [allSlots, setAllSlots] = useState<Record<string, (Slot & { bookings: Booking[] })[]>>({})
   const [loading, setLoading] = useState(true)
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
 
   // Add slot modal
   const [showAddSlot, setShowAddSlot] = useState(false)
+  const [addTargetActivity, setAddTargetActivity] = useState<Activity | null>(null)
   const [addForm, setAddForm] = useState({ start_time: '', end_time: '', capacity: '' })
   const [addLoading, setAddLoading] = useState(false)
   const [addError, setAddError] = useState('')
@@ -47,35 +51,39 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
 
   const supabase = createClient()
   const currentDay = eventDays[selectedDay]
-  const currentActivity = activities.find(a => a.name === activeActivity)
 
-  const fetchSlots = useCallback(async () => {
-    if (!currentActivity) return
+  const fetchAllSlots = useCallback(async () => {
     setLoading(true)
-    const resp = await fetch(`/api/admin/slots?activityId=${currentActivity.id}&day=${currentDay}`)
-    const json = await resp.json()
-    setSlots(json.slots || [])
+    const results = await Promise.all(
+      activities.map(a =>
+        fetch(`/api/admin/slots?activityId=${a.id}&day=${currentDay}`)
+          .then(r => r.json())
+          .then(d => ({ id: a.id, slots: d.slots || [] }))
+          .catch(() => ({ id: a.id, slots: [] }))
+      )
+    )
+    const map: Record<string, (Slot & { bookings: Booking[] })[]> = {}
+    for (const r of results) map[r.id] = r.slots
+    setAllSlots(map)
     setLoading(false)
-  }, [currentActivity, currentDay])
+  }, [activities, currentDay])
 
   useEffect(() => {
-    fetchSlots()
-
+    fetchAllSlots()
     const channel = supabase
       .channel('planning-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, fetchSlots)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'slots' }, fetchSlots)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, fetchAllSlots)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'slots' }, fetchAllSlots)
       .subscribe()
-
     return () => { supabase.removeChannel(channel) }
-  }, [fetchSlots])
+  }, [fetchAllSlots])
 
   function handleCheckin(booking: Booking) {
     fetch('/api/bookings/checkin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ticketCode: booking.ticket_code, agentName: 'Admin' }),
-    }).then(fetchSlots)
+    }).then(fetchAllSlots)
   }
 
   async function handleDeleteSlot(slotId: string) {
@@ -88,11 +96,8 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
     })
     const json = await res.json()
     setDeletingSlotId(null)
-    if (!res.ok) {
-      alert(json.error || 'Erreur lors de la suppression')
-    } else {
-      fetchSlots()
-    }
+    if (!res.ok) alert(json.error || 'Erreur lors de la suppression')
+    else fetchAllSlots()
   }
 
   async function handleAddSlot() {
@@ -101,13 +106,13 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
       setAddError('Tous les champs sont requis')
       return
     }
-    if (!currentActivity) return
+    if (!addTargetActivity) return
     setAddLoading(true)
     const res = await fetch('/api/admin/slots', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        activity_id: currentActivity.id,
+        activity_id: addTargetActivity.id,
         day: currentDay,
         start_time: addForm.start_time + ':00',
         end_time: addForm.end_time + ':00',
@@ -116,12 +121,11 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
     })
     const json = await res.json()
     setAddLoading(false)
-    if (!res.ok) {
-      setAddError(json.error || 'Erreur')
-    } else {
+    if (!res.ok) setAddError(json.error || 'Erreur')
+    else {
       setShowAddSlot(false)
       setAddForm({ start_time: '', end_time: '', capacity: '' })
-      fetchSlots()
+      fetchAllSlots()
     }
   }
 
@@ -139,24 +143,20 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
     })
     const json = await res.json()
     setSaveLoading(false)
-    if (!res.ok) {
-      setSaveError(json.error || 'Erreur')
-    } else {
+    if (!res.ok) setSaveError(json.error || 'Erreur')
+    else {
       setActivities(prev => prev.map(a => a.id === editingActivity.id ? { ...a, price } : a))
       setEditingActivity(null)
     }
   }
 
   return (
-    <div className="md:ml-56 p-5 max-w-5xl">
+    <div className="md:ml-56 p-5 max-w-7xl">
       <h1 className="font-bebas text-3xl text-[var(--text-primary)] mb-4">Planning Live</h1>
 
       {/* Day toggle */}
-      <div className="flex gap-2 mb-4">
-        {([
-          { key: 'saturday', label: 'Samedi' },
-          { key: 'sunday', label: 'Dimanche' },
-        ] as const).map(({ key, label }) => (
+      <div className="flex gap-2 mb-6">
+        {([{ key: 'saturday', label: 'Samedi' }, { key: 'sunday', label: 'Dimanche' }] as const).map(({ key, label }) => (
           <button
             key={key}
             onClick={() => setSelectedDay(key)}
@@ -172,204 +172,147 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
         ))}
       </div>
 
-      {/* Activity tabs */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-        {activities.map(activity => (
-          <div key={activity.id} className="flex-shrink-0 flex items-center gap-1">
-            <button
-              onClick={() => setActiveActivity(activity.name)}
-              className={[
-                'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all',
-                activeActivity === activity.name
-                  ? 'text-white'
-                  : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border)]',
-              ].join(' ')}
-              style={activeActivity === activity.name ? { backgroundColor: activity.color } : {}}
-            >
-              {activity.label}
-            </button>
-            <button
-              onClick={() => { setEditingActivity(activity); setPriceValue(String(activity.price / 100)); setSaveError('') }}
-              className="w-6 h-6 rounded-md bg-[var(--bg-elevated)] border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent)] transition-colors"
-              title={`Modifier le prix (${activity.price}€)`}
-            >
-              <Pencil size={10} className="text-[var(--text-secondary)]" />
-            </button>
-          </div>
-        ))}
-      </div>
+      {/* 4 sections grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {activities.map(activity => {
+          const slots = (allSlots[activity.id] || []).filter(s => !s.is_break)
+          const totalBooked = slots.reduce((s, sl) => s + (sl as any).bookings.filter((b: Booking) => b.payment_status !== 'cancelled').length, 0)
+          const totalCap = slots.reduce((s, sl) => s + sl.capacity, 0)
 
-      {/* Slots */}
-      {loading ? (
-        <div className="space-y-3">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="h-20 rounded-xl animate-pulse bg-[var(--bg-elevated)]" />
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {slots.filter(s => !s.is_break).map(slot => {
-            const bookings = (slot as any).bookings as Booking[]
-            const activeBookings = bookings.filter(b => b.payment_status !== 'cancelled')
-            const checkedIn = activeBookings.filter(b => b.checked_in).length
-            const fillPct = slot.capacity > 0 ? (activeBookings.length / slot.capacity) * 100 : 0
+          return (
+            <div key={activity.id} className="card overflow-hidden">
+              {/* Section header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]" style={{ borderLeft: `3px solid ${activity.color}` }}>
+                <div className="flex items-center gap-2">
+                  <span className="font-bebas text-lg text-[var(--text-primary)]">{activity.label}</span>
+                  <span className="text-[var(--text-secondary)] text-xs">{totalBooked}/{totalCap}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => { setEditingActivity(activity); setPriceValue(String(activity.price / 100)); setSaveError('') }}
+                    className="w-6 h-6 rounded-md bg-[var(--bg-elevated)] border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent)] transition-colors"
+                    title="Modifier le prix"
+                  >
+                    <Pencil size={10} className="text-[var(--text-secondary)]" />
+                  </button>
+                  <button
+                    onClick={() => { setAddTargetActivity(activity); setShowAddSlot(true); setAddError(''); setAddForm({ start_time: '', end_time: '', capacity: '' }) }}
+                    className="w-6 h-6 rounded-md bg-[var(--bg-elevated)] border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent)] transition-colors"
+                    title="Ajouter un créneau"
+                  >
+                    <Plus size={12} className="text-[var(--text-secondary)]" />
+                  </button>
+                </div>
+              </div>
 
-            return (
-              <motion.div
-                key={slot.id}
-                layout
-                className="card p-4"
-              >
-                {/* Slot header */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <span className="font-bebas text-lg text-[var(--text-primary)]">
-                      {formatTime(slot.start_time)}
-                    </span>
-                    <div className="flex items-center gap-1.5 text-[var(--text-secondary)] text-sm">
-                      <Users size={13} />
-                      {activeBookings.length}/{slot.capacity}
-                    </div>
-                    {checkedIn > 0 && (
-                      <div className="flex items-center gap-1 text-green-400 text-xs">
-                        <Check size={12} />
-                        {checkedIn} check-in{checkedIn > 1 ? 's' : ''}
+              {/* Slots list */}
+              <div className="divide-y divide-[var(--border)] max-h-[500px] overflow-y-auto">
+                {loading ? (
+                  <div className="p-4 space-y-2">
+                    {[...Array(4)].map((_, i) => <div key={i} className="h-8 rounded animate-pulse bg-[var(--bg-elevated)]" />)}
+                  </div>
+                ) : slots.length === 0 ? (
+                  <p className="text-[var(--text-secondary)] text-xs text-center py-6">Aucun créneau</p>
+                ) : slots.map(slot => {
+                  const bookings = (slot as any).bookings as Booking[]
+                  const activeBookings = bookings.filter(b => b.payment_status !== 'cancelled')
+                  const checkedIn = activeBookings.filter(b => b.checked_in).length
+                  const fillPct = slot.capacity > 0 ? (activeBookings.length / slot.capacity) * 100 : 0
+                  const isFull = activeBookings.length >= slot.capacity
+
+                  return (
+                    <div key={slot.id} className="px-4 py-3">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bebas text-base text-[var(--text-primary)]">{formatTime(slot.start_time)}</span>
+                          <div className="flex items-center gap-1 text-[var(--text-secondary)] text-xs">
+                            <Users size={11} />
+                            <span style={isFull ? { color: activity.color, fontWeight: 600 } : {}}>
+                              {activeBookings.length}/{slot.capacity}
+                            </span>
+                          </div>
+                          {checkedIn > 0 && (
+                            <div className="flex items-center gap-0.5 text-green-400 text-xs">
+                              <Check size={10} />
+                              {checkedIn}
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleDeleteSlot(slot.id)}
+                          disabled={deletingSlotId === slot.id}
+                          className="w-5 h-5 rounded flex items-center justify-center hover:text-red-400 transition-colors disabled:opacity-40"
+                        >
+                          <Trash2 size={11} className="text-[var(--text-secondary)]" />
+                        </button>
                       </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <a
-                      href={`/admin/inscrire?slotId=${slot.id}&activityId=${currentActivity?.id}`}
-                      className="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] flex items-center justify-center hover:border-[var(--accent)] transition-colors"
-                      title="Inscrire manuellement"
-                    >
-                      <Plus size={14} className="text-[var(--text-secondary)]" />
-                    </a>
-                    <button
-                      onClick={() => handleDeleteSlot(slot.id)}
-                      disabled={deletingSlotId === slot.id}
-                      className="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] flex items-center justify-center hover:border-red-500 transition-colors disabled:opacity-40"
-                      title="Supprimer le créneau"
-                    >
-                      <Trash2 size={13} className="text-[var(--text-secondary)]" />
-                    </button>
-                  </div>
-                </div>
 
-                {/* Barre de remplissage */}
-                <div className="h-1.5 rounded-full bg-[var(--bg-elevated)] mb-3 overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-300"
-                    style={{
-                      width: `${fillPct}%`,
-                      backgroundColor: currentActivity?.color,
-                    }}
-                  />
-                </div>
+                      {/* Fill bar */}
+                      <div className="h-1 rounded-full bg-[var(--bg-elevated)] mb-2 overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-300" style={{ width: `${fillPct}%`, backgroundColor: activity.color }} />
+                      </div>
 
-                {/* Noms des inscrits */}
-                {activeBookings.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {activeBookings.map(booking => (
-                      <button
-                        key={booking.id}
-                        onClick={() => setSelectedBooking(booking)}
-                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] hover:border-[var(--accent)] transition-colors text-xs"
-                      >
-                        <span className="text-[var(--text-primary)]">
-                          {booking.first_name} {booking.last_name.charAt(0)}.
-                        </span>
-                        {booking.checked_in ? (
-                          <span className="badge badge-green" style={{ fontSize: '10px', padding: '1px 6px' }}>✓ Scanné</span>
-                        ) : (
-                          <span className={`badge ${PAYMENT_BADGES[booking.payment_status]}`} style={{ fontSize: '10px', padding: '1px 6px' }}>
-                            {booking.payment_status === 'paid' ? 'En ligne' : booking.payment_status === 'cash' ? 'Cash' : booking.payment_status === 'terminal' ? 'Terminal' : booking.payment_status === 'free' ? 'Gratuit' : '⏳'}
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {activeBookings.length === 0 && (
-                  <p className="text-[var(--text-secondary)] text-xs">Aucune réservation</p>
-                )}
-              </motion.div>
-            )
-          })}
-
-          {/* Add slot button */}
-          <button
-            onClick={() => { setShowAddSlot(true); setAddError(''); setAddForm({ start_time: '', end_time: '', capacity: '' }) }}
-            className="w-full py-3 rounded-xl border border-dashed border-[var(--border)] text-[var(--text-secondary)] text-sm flex items-center justify-center gap-2 hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
-          >
-            <Plus size={16} />
-            Ajouter un créneau
-          </button>
-        </div>
-      )}
+                      {/* Participants */}
+                      {activeBookings.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {activeBookings.map(booking => (
+                            <button
+                              key={booking.id}
+                              onClick={() => setSelectedBooking(booking)}
+                              className="flex items-center gap-1 px-2 py-0.5 rounded bg-[var(--bg-elevated)] border border-[var(--border)] hover:border-[var(--accent)] transition-colors text-[10px]"
+                            >
+                              <span className="text-[var(--text-primary)]">{booking.first_name} {booking.last_name.charAt(0)}.</span>
+                              {booking.checked_in
+                                ? <span className="badge badge-green" style={{ fontSize: '9px', padding: '0 4px' }}>✓</span>
+                                : <span className={`badge ${PAYMENT_BADGES[booking.payment_status]}`} style={{ fontSize: '9px', padding: '0 4px' }}>{PAYMENT_LABELS[booking.payment_status]}</span>
+                              }
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+      </div>
 
       {/* Add Slot Modal */}
       <AnimatePresence>
         {showAddSlot && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-5"
             onClick={e => { if (e.target === e.currentTarget) setShowAddSlot(false) }}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-6 w-full max-w-sm"
             >
               <div className="flex items-center justify-between mb-5">
                 <h2 className="font-bebas text-xl text-[var(--text-primary)]">Nouveau créneau</h2>
-                <button onClick={() => setShowAddSlot(false)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
-                  <X size={18} />
-                </button>
+                <button onClick={() => setShowAddSlot(false)}><X size={18} className="text-[var(--text-secondary)]" /></button>
               </div>
               <p className="text-[var(--text-secondary)] text-xs mb-4">
-                {currentActivity?.label} · {selectedDay === 'saturday' ? 'Samedi' : 'Dimanche'} {currentDay}
+                {addTargetActivity?.label} · {selectedDay === 'saturday' ? 'Samedi' : 'Dimanche'}
               </p>
               <div className="space-y-3">
                 <div>
                   <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Heure de début</label>
-                  <input
-                    type="time"
-                    value={addForm.start_time}
-                    onChange={e => setAddForm(f => ({ ...f, start_time: e.target.value }))}
-                    className="input-field w-full"
-                  />
+                  <input type="time" value={addForm.start_time} onChange={e => setAddForm(f => ({ ...f, start_time: e.target.value }))} className="input-field w-full" />
                 </div>
                 <div>
                   <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Heure de fin</label>
-                  <input
-                    type="time"
-                    value={addForm.end_time}
-                    onChange={e => setAddForm(f => ({ ...f, end_time: e.target.value }))}
-                    className="input-field w-full"
-                  />
+                  <input type="time" value={addForm.end_time} onChange={e => setAddForm(f => ({ ...f, end_time: e.target.value }))} className="input-field w-full" />
                 </div>
                 <div>
                   <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Capacité</label>
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="ex: 8"
-                    value={addForm.capacity}
-                    onChange={e => setAddForm(f => ({ ...f, capacity: e.target.value }))}
-                    className="input-field w-full"
-                  />
+                  <input type="number" min="1" placeholder="ex: 6" value={addForm.capacity} onChange={e => setAddForm(f => ({ ...f, capacity: e.target.value }))} className="input-field w-full" />
                 </div>
                 {addError && <p className="text-red-400 text-xs">{addError}</p>}
-                <button
-                  onClick={handleAddSlot}
-                  disabled={addLoading}
-                  className="btn-cta w-full mt-2 disabled:opacity-50"
-                >
+                <button onClick={handleAddSlot} disabled={addLoading} className="btn-cta w-full mt-2 disabled:opacity-50">
                   {addLoading ? 'Création...' : 'Créer le créneau'}
                 </button>
               </div>
@@ -382,47 +325,29 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
       <AnimatePresence>
         {editingActivity && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-5"
             onClick={e => { if (e.target === e.currentTarget) setEditingActivity(null) }}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-6 w-full max-w-xs"
             >
               <div className="flex items-center justify-between mb-5">
                 <h2 className="font-bebas text-xl text-[var(--text-primary)]">Modifier le tarif</h2>
-                <button onClick={() => setEditingActivity(null)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
-                  <X size={18} />
-                </button>
+                <button onClick={() => setEditingActivity(null)}><X size={18} className="text-[var(--text-secondary)]" /></button>
               </div>
               <p className="text-[var(--text-secondary)] text-xs mb-4">{editingActivity.label}</p>
               <div className="space-y-3">
                 <div>
                   <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-1">Prix en euros (€)</label>
                   <div className="relative">
-                    <input
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={priceValue}
-                      onChange={e => setPriceValue(e.target.value)}
-                      className="input-field w-full pr-8"
-                      autoFocus
-                    />
+                    <input type="number" min="0" step="1" value={priceValue} onChange={e => setPriceValue(e.target.value)} className="input-field w-full pr-8" autoFocus />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] text-sm">€</span>
                   </div>
                 </div>
                 {saveError && <p className="text-red-400 text-xs">{saveError}</p>}
-                <button
-                  onClick={handleSavePrice}
-                  disabled={saveLoading}
-                  className="btn-cta w-full mt-2 disabled:opacity-50"
-                >
+                <button onClick={handleSavePrice} disabled={saveLoading} className="btn-cta w-full mt-2 disabled:opacity-50">
                   {saveLoading ? 'Enregistrement...' : 'Enregistrer'}
                 </button>
               </div>
@@ -436,7 +361,7 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
         booking={selectedBooking}
         onClose={() => setSelectedBooking(null)}
         onCheckin={handleCheckin}
-        onRefresh={fetchSlots}
+        onRefresh={fetchAllSlots}
       />
     </div>
   )
