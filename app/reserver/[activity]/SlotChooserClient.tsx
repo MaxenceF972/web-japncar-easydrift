@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, ShoppingCart, Minus, Plus, ArrowRight } from 'lucide-react'
+import { ArrowLeft, ShoppingCart, Minus, Plus, ArrowRight, X } from 'lucide-react'
 import type { Activity, Slot } from '@/lib/supabase/types'
 import { SlotPicker } from '@/components/client/SlotPicker'
 import { formatTime, formatDate, formatPrice, getDayLabel } from '@/lib/utils'
@@ -42,6 +42,8 @@ export function SlotChooserClient({ activity, eventDays }: Props) {
   const [selectedDay, setSelectedDay] = useState<'saturday' | 'sunday'>('sunday')
   const [basket, setBasket] = useState<Record<string, { slot: Slot; qty: number }>>({})
   const [otherActivities, setOtherActivities] = useState<CartActivity[]>([])
+  const [showCart, setShowCart] = useState(false)
+  const [fullCart, setFullCart] = useState<Cart>({})
 
   const days = [
     { key: 'saturday' as const, label: 'Samedi', date: eventDays.saturday },
@@ -54,6 +56,7 @@ export function SlotChooserClient({ activity, eventDays }: Props) {
     const mine = cart[activity.name]
     if (mine?.basket) setBasket(mine.basket)
     setOtherActivities(Object.values(cart).filter(c => c.activityName !== activity.name && Object.keys(c.basket).length > 0))
+    setFullCart(cart)
   }, [activity.name])
 
   // Persist basket to global cart whenever it changes
@@ -62,16 +65,50 @@ export function SlotChooserClient({ activity, eventDays }: Props) {
     if (Object.keys(basket).length === 0) {
       delete cart[activity.name]
     } else {
-      cart[activity.name] = {
-        activityId: activity.id,
-        activityName: activity.name,
-        activityLabel: activity.label,
-        price: activity.price,
-        basket,
-      }
+      cart[activity.name] = { activityId: activity.id, activityName: activity.name, activityLabel: activity.label, price: activity.price, basket }
     }
     writeCart(cart)
+    setFullCart({ ...cart })
+    setOtherActivities(Object.values(cart).filter(c => c.activityName !== activity.name && Object.keys(c.basket).length > 0))
   }, [basket, activity])
+
+  function removeFromFullCart(activityName: string, slotId: string) {
+    if (activityName === activity.name) {
+      setBasket(prev => { const { [slotId]: _, ...rest } = prev; return rest })
+    } else {
+      const cart = readCart()
+      if (cart[activityName]?.basket[slotId]) {
+        delete cart[activityName].basket[slotId]
+        if (Object.keys(cart[activityName].basket).length === 0) delete cart[activityName]
+        writeCart(cart)
+        setFullCart({ ...cart })
+        setOtherActivities(Object.values(cart).filter(c => c.activityName !== activity.name && Object.keys(c.basket).length > 0))
+      }
+    }
+  }
+
+  function adjustFullCartQty(activityName: string, slotId: string, delta: number) {
+    if (activityName === activity.name) {
+      setBasket(prev => {
+        const current = prev[slotId]?.qty || 0
+        const next = current + delta
+        if (next <= 0) { const { [slotId]: _, ...rest } = prev; return rest }
+        return { ...prev, [slotId]: { ...prev[slotId], qty: next } }
+      })
+    } else {
+      const cart = readCart()
+      if (cart[activityName]?.basket[slotId]) {
+        const current = cart[activityName].basket[slotId].qty
+        const next = current + delta
+        if (next <= 0) delete cart[activityName].basket[slotId]
+        else cart[activityName].basket[slotId].qty = next
+        if (Object.keys(cart[activityName].basket).length === 0) delete cart[activityName]
+        writeCart(cart)
+        setFullCart({ ...cart })
+        setOtherActivities(Object.values(cart).filter(c => c.activityName !== activity.name && Object.keys(c.basket).length > 0))
+      }
+    }
+  }
 
   function addSlot(slot: Slot) {
     const available = slot.capacity - slot.booked_count
@@ -137,10 +174,13 @@ export function SlotChooserClient({ activity, eventDays }: Props) {
             <p className="text-[var(--text-secondary)] text-xs">{formatPrice(activity.price)} / personne</p>
           </div>
           {totalCartQty > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--accent)]/20 border border-[var(--accent)]/40">
+            <button
+              onClick={() => setShowCart(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--accent)]/20 border border-[var(--accent)]/40"
+            >
               <ShoppingCart size={13} className="text-[var(--accent)]" />
               <span className="text-[var(--accent)] text-xs font-bold">{totalCartQty}</span>
-            </div>
+            </button>
           )}
         </div>
       </div>
@@ -283,6 +323,66 @@ export function SlotChooserClient({ activity, eventDays }: Props) {
                 </button>
               </div>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Cart drawer */}
+      <AnimatePresence>
+        {showCart && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/60"
+            onClick={() => setShowCart(false)}
+          >
+            <motion.div
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="absolute bottom-0 left-0 right-0 bg-[var(--bg-card)] rounded-t-2xl max-h-[80vh] flex flex-col"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
+                <span className="font-bebas text-xl text-[var(--text-primary)]">Mon panier — {totalCartQty} place{totalCartQty > 1 ? 's' : ''}</span>
+                <button onClick={() => setShowCart(false)}><X size={20} className="text-[var(--text-secondary)]" /></button>
+              </div>
+              <div className="overflow-y-auto flex-1 px-5 py-4 space-y-2">
+                {Object.values(fullCart).map(cartActivity =>
+                  Object.values(cartActivity.basket).map(({ slot, qty }) => (
+                    <div key={slot.id} className="flex items-center gap-3 p-3 rounded-xl bg-[var(--bg-elevated)]">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-[var(--text-secondary)]">{cartActivity.activityLabel}</p>
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">{getDayLabel(slot.day)} · {formatTime(slot.start_time)}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => adjustFullCartQty(cartActivity.activityName, slot.id, -1)}
+                          className="w-7 h-7 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] flex items-center justify-center">
+                          <Minus size={11} className="text-[var(--text-secondary)]" />
+                        </button>
+                        <span className="font-bebas text-base w-4 text-center text-[var(--text-primary)]">{qty}</span>
+                        <button onClick={() => adjustFullCartQty(cartActivity.activityName, slot.id, 1)}
+                          disabled={qty >= slot.capacity - slot.booked_count}
+                          className="w-7 h-7 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] flex items-center justify-center disabled:opacity-30">
+                          <Plus size={11} className="text-[var(--text-secondary)]" />
+                        </button>
+                        <span className="text-sm font-semibold text-[var(--accent)] w-12 text-right">{formatPrice(qty * cartActivity.price)}</span>
+                        <button onClick={() => removeFromFullCart(cartActivity.activityName, slot.id)}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center hover:text-red-400 transition-colors">
+                          <X size={14} className="text-[var(--text-secondary)]" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="px-5 py-4 border-t border-[var(--border)]">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[var(--text-secondary)] text-sm">Total</span>
+                  <span className="font-bebas text-2xl text-[var(--accent)]">{formatPrice(totalCartPrice)}</span>
+                </div>
+                <button onClick={() => { setShowCart(false); handleCheckout() }} className="btn-cta w-full font-bebas text-lg">
+                  PAYER
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
