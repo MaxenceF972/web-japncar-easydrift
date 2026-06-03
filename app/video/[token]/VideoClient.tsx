@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Download, Lock, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
-import { formatPrice } from '@/lib/utils'
 
 function getDriveId(url: string): string | null {
   const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/)
@@ -15,7 +14,9 @@ function getDriveEmbedUrl(url: string): string {
   return id ? `https://drive.google.com/file/d/${id}/preview` : url
 }
 
-function getDriveDownloadUrl(url: string): string {
+function getDownloadUrl(url: string): string {
+  // WeTransfer ou autre lien direct → utiliser tel quel
+  if (!url.includes('drive.google.com')) return url
   const id = getDriveId(url)
   return id ? `https://drive.google.com/uc?export=download&id=${id}` : url
 }
@@ -38,7 +39,6 @@ export function VideoClient({ order }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
   const widgetMountedRef = useRef(false)
   const successProcessingRef = useRef(false)
 
@@ -110,7 +110,7 @@ export function VideoClient({ order }: Props) {
   }
 
   const previewEmbed = getDriveEmbedUrl(order.preview_url)
-  const downloadUrl = getDriveDownloadUrl(order.full_video_url)
+  const downloadUrl = getDownloadUrl(order.full_video_url)
 
   return (
     <main className="min-h-dvh bg-[var(--bg-primary)] pb-10">
