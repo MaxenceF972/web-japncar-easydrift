@@ -42,14 +42,6 @@ export function VideoEmail({ firstName, previewPageUrl, appUrl }: VideoEmailProp
               On a capturé un moment de votre baptême drift — regardez ça :
             </Text>
 
-            {/* Video thumbnail */}
-            <Section style={{ backgroundColor: '#0D0D0D', borderRadius: 10, padding: '32px 20px', textAlign: 'center', marginBottom: 20, border: '1px solid #2A2A2A' }}>
-              <div style={{ width: 64, height: 64, backgroundColor: '#F47B20', borderRadius: '50%', margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: '#fff', fontSize: 24, margin: 0, lineHeight: 1 }}>▶</Text>
-              </div>
-              <Text style={{ color: '#888', fontSize: 13, margin: 0 }}>Votre extrait — 15 secondes</Text>
-            </Section>
-
             <Button
               href={previewPageUrl}
               style={{
@@ -87,15 +79,17 @@ export function VideoEmail({ firstName, previewPageUrl, appUrl }: VideoEmailProp
             <Button
               href={previewPageUrl}
               style={{
-                backgroundColor: 'transparent',
-                color: '#F5F5F5',
-                padding: '13px 20px',
+                backgroundColor: '#F47B20',
+                color: '#fff',
+                padding: '14px 0',
                 borderRadius: 8,
                 fontWeight: 'bold',
-                fontSize: 14,
+                fontSize: 15,
+                letterSpacing: 1,
                 textDecoration: 'none',
-                display: 'inline-block',
-                border: '1px solid #444',
+                display: 'block',
+                textAlign: 'center',
+                width: '100%',
               }}
             >
               Obtenir ma vidéo complète — 30 € ↗
