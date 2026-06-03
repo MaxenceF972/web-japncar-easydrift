@@ -39,7 +39,7 @@ export function VideoEmail({ firstName, previewPageUrl, appUrl }: VideoEmailProp
             </Text>
             <Text style={{ color: '#CCCCCC', fontSize: 15, lineHeight: 1.6, margin: '0 0 24px' }}>
               Merci d'avoir vécu cette expérience avec nous ! On espère que vous avez kiffé.
-              On a capturé un moment de votre baptême drift — regardez ça :
+              On a capturé un moment de votre baptême EASYDRIFT — regardez ça :
             </Text>
 
             <Button
@@ -101,7 +101,10 @@ export function VideoEmail({ firstName, previewPageUrl, appUrl }: VideoEmailProp
           {/* Footer */}
           <Section style={{ backgroundColor: '#1A1A1A', borderRadius: '0 0 12px 12px', padding: '20px 32px' }}>
             <Text style={{ color: '#CCCCCC', fontSize: 14, margin: '0 0 8px', lineHeight: 1.6 }}>
-              À très vite sur le circuit. Si vous avez des questions, répondez directement à cet email.
+              À très vite. Si vous avez des questions, contactez{' '}
+              <a href="mailto:maxence.fortier@easydriftdts.com" style={{ color: '#F47B20', textDecoration: 'none' }}>
+                maxence.fortier@easydriftdts.com
+              </a>
             </Text>
             <Text style={{ color: '#F5F5F5', fontSize: 15, fontWeight: 'bold', margin: 0 }}>
               L'équipe <span style={{ color: '#F47B20' }}>EASYDRIFT</span>
