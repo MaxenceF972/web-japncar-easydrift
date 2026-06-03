@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Calendar, QrCode, List, UserPlus, BarChart3, LogOut, MessageSquare, TrendingUp, Timer, MoreHorizontal, X } from 'lucide-react'
+import { LayoutDashboard, Calendar, QrCode, List, UserPlus, BarChart3, LogOut, MessageSquare, TrendingUp, Timer, MoreHorizontal, X, Video } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
 
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: '/admin/inscrire',       icon: UserPlus,        label: 'Inscrire' },
   { href: '/admin/chrono',         icon: Timer,           label: 'Chrono' },
   { href: '/admin/contacts',       icon: MessageSquare,   label: 'Contacts' },
+  { href: '/admin/videos',         icon: Video,           label: 'Vidéos' },
   { href: '/admin/stats',          icon: BarChart3,       label: 'Stats' },
   { href: '/admin/previsionnel',   icon: TrendingUp,      label: 'Prévisionnel' },
 ]
