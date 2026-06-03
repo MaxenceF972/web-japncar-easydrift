@@ -20,8 +20,8 @@ export function VideoEmail({ firstName, previewPageUrl, appUrl }: VideoEmailProp
             <Img
               src={`${appUrl}/logo-easydrift.png`}
               alt="EASYDRIFT"
-              width={140}
-              height={44}
+              width={180}
+              height={56}
               style={{ objectFit: 'contain', margin: '0 auto 20px' }}
             />
             <Text style={{ color: '#F5F5F5', fontSize: 26, fontWeight: 'bold', margin: '0 0 6px', lineHeight: 1.2 }}>
