@@ -17,10 +17,14 @@ export async function POST(req: NextRequest) {
     if (!order) return NextResponse.json({ error: 'Vidéo introuvable' }, { status: 404 })
     if (order.payment_status === 'paid') return NextResponse.json({ error: 'Déjà payé' }, { status: 400 })
 
+    const name = order.booking
+      ? `${order.booking.first_name} ${order.booking.last_name}`
+      : `${order.custom_first_name || ''} ${order.custom_last_name || ''}`.trim() || 'Client'
+
     const reference = generateTicketCode()
     const checkout = await createSumUpCheckout({
       amount: 3000,
-      description: `Vidéo EASYDRIFT - ${order.booking.first_name} ${order.booking.last_name}`,
+      description: `Vidéo EASYDRIFT - ${name}`,
       reference,
       returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/video/${token}`,
     })
