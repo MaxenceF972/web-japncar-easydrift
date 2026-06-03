@@ -20,60 +20,91 @@ export async function GET() {
   const { data: orders } = await supabase
     .from('video_orders')
     .select('*')
-    .in('booking_id', bookingIds)
+    .or(`booking_id.in.(${bookingIds.join(',')}),booking_id.is.null`)
 
-  const ordersByBooking = Object.fromEntries((orders || []).map((o: any) => [o.booking_id, o]))
+  const ordersByBooking = Object.fromEntries(
+    (orders || []).filter((o: any) => o.booking_id).map((o: any) => [o.booking_id, o])
+  )
+  const customOrders = (orders || []).filter((o: any) => !o.booking_id)
+
+  // Custom entries (no booking)
+  const customEntries = customOrders.map((o: any) => ({
+    id: `custom_${o.id}`,
+    first_name: o.custom_first_name || '',
+    last_name: o.custom_last_name || '',
+    email: o.custom_email || '',
+    slot: null,
+    video_order: o,
+    is_custom: true,
+  }))
 
   return NextResponse.json({
-    bookings: (bookings || []).map((b: any) => ({
-      ...b,
-      video_order: ordersByBooking[b.id] || null,
-    })),
+    bookings: [
+      ...(bookings || []).map((b: any) => ({ ...b, video_order: ordersByBooking[b.id] || null })),
+      ...customEntries,
+    ],
   })
 }
 
 export async function POST(req: NextRequest) {
   const supabase = createServiceClient() as any
-  const { bookingId, previewUrl, fullVideoUrl, sendEmail } = await req.json()
+  const { bookingId, previewUrl, fullVideoUrl, sendEmail, customFirstName, customLastName, customEmail } = await req.json()
 
-  if (!bookingId) return NextResponse.json({ error: 'bookingId requis' }, { status: 400 })
+  const isCustom = !bookingId
 
-  // Upsert video_order
-  const { data: order, error } = await supabase
-    .from('video_orders')
-    .upsert(
-      { booking_id: bookingId, preview_url: previewUrl, full_video_url: fullVideoUrl },
-      { onConflict: 'booking_id' }
-    )
-    .select()
-    .single()
+  let order: any
+  let error: any
+
+  if (isCustom) {
+    // Entrée manuelle sans booking
+    const { data, error: e } = await supabase
+      .from('video_orders')
+      .insert({
+        booking_id: null,
+        preview_url: previewUrl,
+        full_video_url: fullVideoUrl,
+        custom_first_name: customFirstName,
+        custom_last_name: customLastName,
+        custom_email: customEmail,
+      })
+      .select().single()
+    order = data; error = e
+  } else {
+    const { data, error: e } = await supabase
+      .from('video_orders')
+      .upsert(
+        { booking_id: bookingId, preview_url: previewUrl, full_video_url: fullVideoUrl },
+        { onConflict: 'booking_id' }
+      )
+      .select().single()
+    order = data; error = e
+  }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   if (sendEmail) {
-    const { data: booking } = await supabase
-      .from('bookings')
-      .select('first_name, email')
-      .eq('id', bookingId)
-      .single()
+    const firstName = isCustom ? customFirstName : null
+    const email = isCustom ? customEmail : null
 
-    if (booking?.email) {
+    let resolvedFirstName = firstName
+    let resolvedEmail = email
+
+    if (!isCustom && bookingId) {
+      const { data: booking } = await supabase.from('bookings').select('first_name, email').eq('id', bookingId).single()
+      resolvedFirstName = booking?.first_name
+      resolvedEmail = booking?.email
+    }
+
+    if (resolvedEmail) {
       try {
         const previewPageUrl = `${process.env.NEXT_PUBLIC_APP_URL}/video/${order.download_token}`
         await getResend().emails.send({
           from: FROM_EMAIL,
-          to: booking.email,
+          to: resolvedEmail,
           subject: '🎬 Ta vidéo EASYDRIFT est disponible !',
-          react: VideoEmail({
-            firstName: booking.first_name,
-            previewPageUrl,
-            appUrl: process.env.NEXT_PUBLIC_APP_URL!,
-          }),
+          react: VideoEmail({ firstName: resolvedFirstName || 'toi', previewPageUrl, appUrl: process.env.NEXT_PUBLIC_APP_URL! }),
         })
-        await supabase
-          .from('video_orders')
-          .update({ email_sent_at: new Date().toISOString() })
-          .eq('id', order.id)
+        await supabase.from('video_orders').update({ email_sent_at: new Date().toISOString() }).eq('id', order.id)
       } catch (err) {
         console.error('Email error:', err)
       }

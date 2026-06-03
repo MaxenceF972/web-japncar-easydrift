@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { CheckCircle, Mail, Save, ChevronDown, ChevronUp, Loader2, Send } from 'lucide-react'
+import { CheckCircle, Save, ChevronDown, ChevronUp, Loader2, Send, Plus, X } from 'lucide-react'
 import { formatTime, getDayLabel } from '@/lib/utils'
 
 interface VideoOrder {
@@ -30,6 +30,9 @@ export function VideosClient() {
   const [saving, setSaving] = useState<string | null>(null)
   const [sending, setSending] = useState<string | null>(null)
   const [saved, setSaved] = useState<string | null>(null)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [addForm, setAddForm] = useState({ firstName: '', lastName: '', email: '' })
+  const [addLoading, setAddLoading] = useState(false)
 
   useEffect(() => {
     fetch('/api/admin/videos')
@@ -48,17 +51,57 @@ export function VideosClient() {
       })
   }, [])
 
-  async function handleSave(bookingId: string, sendEmail = false) {
-    sendEmail ? setSending(bookingId) : setSaving(bookingId)
-    const form = forms[bookingId]
+  async function handleAddCustom() {
+    if (!addForm.firstName || !addForm.lastName) return
+    setAddLoading(true)
     const resp = await fetch('/api/admin/videos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        bookingId,
+        customFirstName: addForm.firstName.trim(),
+        customLastName: addForm.lastName.trim(),
+        customEmail: addForm.email.trim(),
+        previewUrl: '',
+        fullVideoUrl: '',
+      }),
+    })
+    const data = await resp.json()
+    setAddLoading(false)
+    if (resp.ok) {
+      const newEntry = {
+        id: `custom_${data.order.id}`,
+        first_name: addForm.firstName.trim(),
+        last_name: addForm.lastName.trim(),
+        email: addForm.email.trim(),
+        slot: null,
+        video_order: data.order,
+        is_custom: true,
+      }
+      setBookings(prev => [...prev, newEntry])
+      setForms(f => ({ ...f, [`custom_${data.order.id}`]: { previewUrl: '', fullVideoUrl: '' } }))
+      setAddForm({ firstName: '', lastName: '', email: '' })
+      setShowAddForm(false)
+    }
+  }
+
+  async function handleSave(bookingId: string, sendEmail = false) {
+    sendEmail ? setSending(bookingId) : setSaving(bookingId)
+    const form = forms[bookingId]
+    const booking = bookings.find(b => b.id === bookingId)
+    const isCustom = !!(booking as any)?.is_custom
+    const resp = await fetch('/api/admin/videos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bookingId: isCustom ? null : bookingId,
         previewUrl: form.previewUrl,
         fullVideoUrl: form.fullVideoUrl,
         sendEmail,
+        ...(isCustom && {
+          customFirstName: booking?.first_name,
+          customLastName: booking?.last_name,
+          customEmail: booking?.email,
+        }),
       }),
     })
     const data = await resp.json()
@@ -166,10 +209,46 @@ export function VideosClient() {
 
   return (
     <div className="md:ml-56 p-5 max-w-2xl">
-      <h1 className="font-bebas text-3xl text-[var(--text-primary)] mb-2">Vidéos Baptême</h1>
-      <p className="text-[var(--text-secondary)] text-sm mb-6">
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="font-bebas text-3xl text-[var(--text-primary)]">Vidéos Baptême</h1>
+        <button
+          onClick={() => setShowAddForm(v => !v)}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)] text-sm text-[var(--text-secondary)] hover:border-[var(--accent)] transition-colors"
+        >
+          {showAddForm ? <X size={14} /> : <Plus size={14} />}
+          {showAddForm ? 'Annuler' : 'Ajouter client'}
+        </button>
+      </div>
+      <p className="text-[var(--text-secondary)] text-sm mb-4">
         {withVideo.length} vidéos liées · {bookings.filter(b => b.video_order?.payment_status === 'paid').length} achetées · {bookings.length} clients total
       </p>
+
+      {showAddForm && (
+        <div className="card p-4 mb-6 space-y-3">
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-widest">Ajouter un client manuellement</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-1">Prénom *</label>
+              <input className="input-field text-sm" placeholder="Maxence" value={addForm.firstName} onChange={e => setAddForm(f => ({ ...f, firstName: e.target.value }))} />
+            </div>
+            <div>
+              <label className="text-xs text-[var(--text-secondary)] block mb-1">Nom *</label>
+              <input className="input-field text-sm" placeholder="FORTIER" value={addForm.lastName} onChange={e => setAddForm(f => ({ ...f, lastName: e.target.value }))} />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-[var(--text-secondary)] block mb-1">Email</label>
+            <input className="input-field text-sm" type="email" placeholder="email@..." value={addForm.email} onChange={e => setAddForm(f => ({ ...f, email: e.target.value }))} />
+          </div>
+          <button
+            onClick={handleAddCustom}
+            disabled={addLoading || !addForm.firstName || !addForm.lastName}
+            className="btn-cta w-full font-bebas text-base disabled:opacity-40"
+          >
+            {addLoading ? <Loader2 size={16} className="animate-spin" /> : 'AJOUTER'}
+          </button>
+        </div>
+      )}
 
       {withVideo.length > 0 && (
         <div className="mb-6">
