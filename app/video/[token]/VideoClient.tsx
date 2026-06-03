@@ -29,11 +29,11 @@ interface Props {
     full_video_url: string
     payment_status: string
     sumup_checkout_id: string | null
-    booking: { first_name: string; last_name: string }
   }
+  firstName: string
 }
 
-export function VideoClient({ order }: Props) {
+export function VideoClient({ order, firstName }: Props) {
   const [paid, setPaid] = useState(order.payment_status === 'paid')
   const [checkoutId, setCheckoutId] = useState<string | null>(order.sumup_checkout_id)
   const [loading, setLoading] = useState(false)
@@ -123,7 +123,7 @@ export function VideoClient({ order }: Props) {
       <div className="max-w-lg mx-auto px-5 py-6 space-y-6">
         <div>
           <h1 className="font-bebas text-3xl text-[var(--text-primary)]">
-            Hey {order.booking.first_name} ! 🎬
+            Hey {firstName} ! 🎬
           </h1>
           <p className="text-[var(--text-secondary)] text-sm mt-1">
             On a filmé ton baptême en dérive. Voici ton extrait.

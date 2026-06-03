@@ -12,53 +12,118 @@ export function VideoEmail({ firstName, previewPageUrl, appUrl }: VideoEmailProp
   return (
     <Html>
       <Head />
-      <Body style={{ backgroundColor: '#0A0A0A', fontFamily: 'Arial, sans-serif', margin: 0 }}>
-        <Container style={{ maxWidth: 560, margin: '0 auto', padding: '32px 16px' }}>
-          <Img
-            src={`${appUrl}/logo-easydrift.png`}
-            alt="EASYDRIFT"
-            width={160}
-            height={50}
-            style={{ objectFit: 'contain', marginBottom: 24 }}
-          />
+      <Body style={{ backgroundColor: '#111111', fontFamily: 'Arial, sans-serif', margin: 0, padding: 0 }}>
+        <Container style={{ maxWidth: 560, margin: '0 auto', backgroundColor: '#111111' }}>
 
-          <Text style={{ color: '#F5F5F5', fontSize: 24, fontWeight: 'bold', margin: '0 0 8px' }}>
-            🎬 Ta vidéo est disponible, {firstName} !
-          </Text>
-          <Text style={{ color: '#888', fontSize: 15, margin: '0 0 24px', lineHeight: 1.6 }}>
-            Merci d'avoir participé au <strong style={{ color: '#F47B20' }}>Baptême EASYDRIFT</strong> lors du JAPN Car à Montlhéry.
-            On a filmé ton passage — voici ton extrait exclusif.
-          </Text>
+          {/* Header */}
+          <Section style={{ backgroundColor: '#1A1A1A', borderRadius: '12px 12px 0 0', padding: '28px 32px', textAlign: 'center', borderBottom: '2px solid #F47B20' }}>
+            <Img
+              src={`${appUrl}/logo-easydrift.png`}
+              alt="EASYDRIFT"
+              width={140}
+              height={44}
+              style={{ objectFit: 'contain', margin: '0 auto 20px' }}
+            />
+            <Text style={{ color: '#F5F5F5', fontSize: 26, fontWeight: 'bold', margin: '0 0 6px', lineHeight: 1.2 }}>
+              Votre souvenir vous attend
+            </Text>
+            <Text style={{ color: '#F47B20', fontSize: 14, fontWeight: 'bold', margin: 0 }}>
+              Jap'N'Car × Montlhéry 2026
+            </Text>
+          </Section>
 
-          <Section style={{ backgroundColor: '#1A1A1A', borderRadius: 12, padding: '24px', marginBottom: 24, border: '1px solid #222' }}>
-            <Text style={{ color: '#F5F5F5', fontSize: 16, margin: '0 0 16px', fontWeight: 'bold' }}>
-              🎥 Voir mon extrait (10-15 sec)
+          {/* Body */}
+          <Section style={{ backgroundColor: '#1A1A1A', padding: '28px 32px' }}>
+            <Text style={{ color: '#F5F5F5', fontSize: 16, margin: '0 0 8px' }}>
+              <strong>Bonjour {firstName},</strong>
             </Text>
-            <Text style={{ color: '#888', fontSize: 14, margin: '0 0 20px' }}>
-              Regarde ton passage en dérive et débloque la vidéo complète pour seulement <strong style={{ color: '#F47B20' }}>30€</strong>.
+            <Text style={{ color: '#CCCCCC', fontSize: 15, lineHeight: 1.6, margin: '0 0 24px' }}>
+              Merci d'avoir vécu cette expérience avec nous ! On espère que vous avez kiffé.
+              On a capturé un moment de votre baptême drift — regardez ça :
             </Text>
+
+            {/* Video thumbnail */}
+            <Section style={{ backgroundColor: '#0D0D0D', borderRadius: 10, padding: '32px 20px', textAlign: 'center', marginBottom: 20, border: '1px solid #2A2A2A' }}>
+              <div style={{ width: 64, height: 64, backgroundColor: '#F47B20', borderRadius: '50%', margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: '#fff', fontSize: 24, margin: 0, lineHeight: 1 }}>▶</Text>
+              </div>
+              <Text style={{ color: '#888', fontSize: 13, margin: 0 }}>Votre extrait — 15 secondes</Text>
+            </Section>
+
             <Button
               href={previewPageUrl}
               style={{
                 backgroundColor: '#F47B20',
                 color: '#fff',
-                padding: '14px 28px',
-                borderRadius: 10,
+                padding: '14px 0',
+                borderRadius: 8,
                 fontWeight: 'bold',
-                fontSize: 15,
+                fontSize: 14,
+                letterSpacing: 2,
                 textDecoration: 'none',
-                display: 'inline-block',
+                display: 'block',
+                textAlign: 'center',
+                width: '100%',
               }}
             >
-              ▶ Voir mon extrait
+              APERÇU GRATUIT
             </Button>
           </Section>
 
-          <Hr style={{ borderColor: '#222', margin: '24px 0' }} />
+          <Hr style={{ borderColor: '#2A2A2A', margin: 0 }} />
 
-          <Text style={{ color: '#555', fontSize: 12, textAlign: 'center' }}>
-            EASYDRIFT · JAPN Car · Circuit de Montlhéry
-          </Text>
+          {/* Upsell */}
+          <Section style={{ backgroundColor: '#1A1A1A', padding: '24px 32px' }}>
+            <Text style={{ color: '#F5F5F5', fontSize: 15, fontWeight: 'bold', margin: '0 0 8px' }}>
+              Vous voulez la vidéo complète de votre passage ?
+            </Text>
+            <Text style={{ color: '#CCCCCC', fontSize: 14, margin: '0 0 16px', lineHeight: 1.6 }}>
+              Téléchargez-la en HD pour la garder et la partager.
+            </Text>
+            <Text style={{ color: '#CCCCCC', fontSize: 14, margin: '0 0 6px' }}>🎬 Vidéo complète en HD</Text>
+            <Text style={{ color: '#CCCCCC', fontSize: 14, margin: '0 0 6px' }}>⬇️ Téléchargement immédiat après paiement</Text>
+            <Text style={{ color: '#CCCCCC', fontSize: 14, margin: '0 0 20px' }}>⏱ Lien disponible 48h après paiement</Text>
+
+            <Button
+              href={previewPageUrl}
+              style={{
+                backgroundColor: 'transparent',
+                color: '#F5F5F5',
+                padding: '13px 20px',
+                borderRadius: 8,
+                fontWeight: 'bold',
+                fontSize: 14,
+                textDecoration: 'none',
+                display: 'inline-block',
+                border: '1px solid #444',
+              }}
+            >
+              Obtenir ma vidéo complète — 30 € ↗
+            </Button>
+          </Section>
+
+          <Hr style={{ borderColor: '#2A2A2A', margin: 0 }} />
+
+          {/* Footer */}
+          <Section style={{ backgroundColor: '#1A1A1A', borderRadius: '0 0 12px 12px', padding: '20px 32px' }}>
+            <Text style={{ color: '#CCCCCC', fontSize: 14, margin: '0 0 8px', lineHeight: 1.6 }}>
+              À très vite sur le circuit. Si vous avez des questions, répondez directement à cet email.
+            </Text>
+            <Text style={{ color: '#F5F5F5', fontSize: 15, fontWeight: 'bold', margin: 0 }}>
+              L'équipe <span style={{ color: '#F47B20' }}>EASYDRIFT</span>
+            </Text>
+          </Section>
+
+          {/* Bottom bar */}
+          <Section style={{ padding: '16px 32px', textAlign: 'center' }}>
+            <Text style={{ color: '#555', fontSize: 11, margin: '0 0 4px' }}>
+              EASYDRIFT Experience — easydrift-experience.com
+            </Text>
+            <Text style={{ color: '#555', fontSize: 11, margin: 0 }}>
+              Vous recevez cet email car vous avez participé au Jap'N'Car 2026.
+            </Text>
+          </Section>
+
         </Container>
       </Body>
     </Html>

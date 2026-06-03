@@ -13,5 +13,8 @@ export default async function VideoPage({ params }: { params: { token: string } 
 
   if (!order || !order.preview_url) notFound()
 
-  return <VideoClient order={order} />
+  // Résoudre le prénom : depuis booking ou depuis les champs custom
+  const firstName = order.booking?.first_name || order.custom_first_name || 'toi'
+
+  return <VideoClient order={order} firstName={firstName} />
 }
