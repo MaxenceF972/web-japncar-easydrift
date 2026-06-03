@@ -28,7 +28,7 @@ export function VideoEmail({ firstName, previewPageUrl, appUrl }: VideoEmailProp
               Votre souvenir vous attend
             </Text>
             <Text style={{ color: '#F47B20', fontSize: 14, fontWeight: 'bold', margin: 0 }}>
-              Jap'N'Car × Montlhéry 2026
+              Jap'N'Car 2026 × EASYDRIFT
             </Text>
           </Section>
 
