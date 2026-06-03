@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       if (isSumUpPaymentSuccessful(checkout)) break
     }
 
-    if (!isSumUpPaymentSuccessful(checkout)) {
+    if (!checkout || !isSumUpPaymentSuccessful(checkout)) {
       return NextResponse.json({ error: 'Paiement non confirmé' }, { status: 402 })
     }
 
