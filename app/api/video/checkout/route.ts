@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
     const reference = generateTicketCode()
     const checkout = await createSumUpCheckout({
-      amount: 100,
+      amount: 3000,
       description: `Vidéo EASYDRIFT - ${name}`,
       reference,
       returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/video/${token}`,
