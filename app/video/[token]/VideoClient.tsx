@@ -187,7 +187,7 @@ export function VideoClient({ order, firstName }: Props) {
                 <p className="font-semibold text-[var(--text-primary)]">Vidéo complète</p>
                 <p className="text-[var(--text-secondary)] text-sm">Téléchargement immédiat après paiement</p>
               </div>
-              <span className="font-bebas text-3xl text-[var(--accent)]">30€</span>
+              <span className="font-bebas text-3xl text-[var(--accent)]">1€</span>
             </div>
             {error && (
               <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
@@ -200,7 +200,7 @@ export function VideoClient({ order, firstName }: Props) {
               disabled={loading}
               className="btn-cta w-full font-bebas text-lg"
             >
-              {loading ? <Loader2 size={18} className="animate-spin" /> : 'ACHETER MA VIDÉO — 30€'}
+              {loading ? <Loader2 size={18} className="animate-spin" /> : 'ACHETER MA VIDÉO — 1€'}
             </button>
             <p className="text-[var(--text-secondary)] text-xs text-center">
               <Lock size={11} className="inline mr-1" />

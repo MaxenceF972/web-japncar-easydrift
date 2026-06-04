@@ -92,7 +92,7 @@ export function VideoEmail({ firstName, previewPageUrl, appUrl }: VideoEmailProp
                 width: '100%',
               }}
             >
-              Obtenir ma vidéo complète — 30 € ↗
+              Obtenir ma vidéo complète — 1 € ↗
             </Button>
           </Section>
 
