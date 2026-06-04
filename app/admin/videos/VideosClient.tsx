@@ -34,6 +34,8 @@ export function VideosClient() {
   const [addForm, setAddForm] = useState({ firstName: '', lastName: '', email: '' })
   const [addLoading, setAddLoading] = useState(false)
   const [search, setSearch] = useState('')
+  const [sendingAll, setSendingAll] = useState(false)
+  const [sendAllProgress, setSendAllProgress] = useState<{ done: number; total: number } | null>(null)
 
   useEffect(() => {
     fetch('/api/admin/videos')
@@ -116,11 +118,42 @@ export function VideosClient() {
     }
   }
 
+  async function handleSendAll() {
+    const toSend = bookings.filter((b: BookingWithVideo) => b.email && !b.video_order?.email_sent_at && b.video_order?.preview_url && b.video_order?.full_video_url)
+    if (!toSend.length) return
+    if (!window.confirm(`Envoyer l'email à ${toSend.length} client${toSend.length > 1 ? 's' : ''} ?`)) return
+    setSendingAll(true)
+    setSendAllProgress({ done: 0, total: toSend.length })
+    for (let i = 0; i < toSend.length; i++) {
+      const b = toSend[i]
+      const isCustom = !!(b as any).is_custom
+      await fetch('/api/admin/videos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId: isCustom ? null : b.id,
+          previewUrl: b.video_order!.preview_url,
+          fullVideoUrl: b.video_order!.full_video_url,
+          sendEmail: true,
+          ...(isCustom && { customFirstName: b.first_name, customLastName: b.last_name, customEmail: b.email }),
+        }),
+      })
+      setBookings(prev => prev.map(x =>
+        x.id === b.id ? { ...x, video_order: { ...x.video_order!, email_sent_at: new Date().toISOString() } } : x
+      ))
+      setSendAllProgress({ done: i + 1, total: toSend.length })
+    }
+    setSendingAll(false)
+    setSendAllProgress(null)
+  }
+
+  const withVideoAll = bookings.filter(b => b.video_order?.preview_url)
   const filtered = search.trim()
     ? bookings.filter(b => `${b.first_name} ${b.last_name}`.toLowerCase().includes(search.toLowerCase()))
     : bookings
   const withVideo = filtered.filter(b => b.video_order?.preview_url)
   const withoutVideo = filtered.filter(b => !b.video_order?.preview_url)
+  const pendingSendCount = withVideoAll.filter(b => b.email && !b.video_order?.email_sent_at && b.video_order?.full_video_url).length
 
   if (loading) {
     return (
@@ -266,7 +299,21 @@ export function VideosClient() {
 
       {withVideo.length > 0 && (
         <div className="mb-6">
-          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-widest mb-3">Vidéos prêtes ({withVideo.length})</p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-widest">Vidéos prêtes ({withVideo.length})</p>
+            {pendingSendCount > 0 && (
+              <button
+                onClick={handleSendAll}
+                disabled={sendingAll}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--accent)] text-white text-xs font-semibold disabled:opacity-60"
+              >
+                {sendingAll
+                  ? <><Loader2 size={12} className="animate-spin" />{sendAllProgress ? `${sendAllProgress.done}/${sendAllProgress.total}` : '...'}</>
+                  : <><Send size={12} />Tout envoyer ({pendingSendCount})</>
+                }
+              </button>
+            )}
+          </div>
           <div className="space-y-2">{withVideo.map(renderBooking)}</div>
         </div>
       )}
