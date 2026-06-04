@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { CheckCircle, Save, ChevronDown, ChevronUp, Loader2, Send, Plus, X } from 'lucide-react'
+import { CheckCircle, Save, ChevronDown, ChevronUp, Loader2, Send, Plus, X, Search } from 'lucide-react'
 import { formatTime, getDayLabel } from '@/lib/utils'
 
 interface VideoOrder {
@@ -33,6 +33,7 @@ export function VideosClient() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [addForm, setAddForm] = useState({ firstName: '', lastName: '', email: '' })
   const [addLoading, setAddLoading] = useState(false)
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     fetch('/api/admin/videos')
@@ -115,8 +116,11 @@ export function VideosClient() {
     }
   }
 
-  const withVideo = bookings.filter(b => b.video_order?.preview_url)
-  const withoutVideo = bookings.filter(b => !b.video_order?.preview_url)
+  const filtered = search.trim()
+    ? bookings.filter(b => `${b.first_name} ${b.last_name}`.toLowerCase().includes(search.toLowerCase()))
+    : bookings
+  const withVideo = filtered.filter(b => b.video_order?.preview_url)
+  const withoutVideo = filtered.filter(b => !b.video_order?.preview_url)
 
   if (loading) {
     return (
@@ -222,6 +226,16 @@ export function VideosClient() {
       <p className="text-[var(--text-secondary)] text-sm mb-4">
         {withVideo.length} vidéos liées · {bookings.filter(b => b.video_order?.payment_status === 'paid').length} achetées · {bookings.length} clients total
       </p>
+
+      <div className="relative mb-4">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" />
+        <input
+          className="input-field pl-9 text-sm w-full"
+          placeholder="Rechercher un client..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+      </div>
 
       {showAddForm && (
         <div className="card p-4 mb-6 space-y-3">
