@@ -183,21 +183,29 @@ export async function POST(req: NextRequest) {
     for (const s of slots) {
       const slotActivityId = s.activityId || activityId
 
+      const isWalkin = s.walkin === true
+
       // Récupérer l'activité pour le prix et l'email
       const { data: activity } = await supabase.from('activities').select('*').eq('id', slotActivityId).single()
       const slotPrice = s.price ?? activity?.price ?? null
 
-      const { data: slot } = await supabase.from('slots').select('*').eq('id', s.slotId).single()
-      if (!slot || slot.booked_count >= slot.capacity) {
-        console.error(`Slot ${s.slotId} full or not found`)
-        continue
+      let slot: any = null
+      if (!isWalkin) {
+        const { data: slotData } = await supabase.from('slots').select('*').eq('id', s.slotId).single()
+        if (!slotData || slotData.booked_count >= slotData.capacity) {
+          console.error(`Slot ${s.slotId} full or not found`)
+          continue
+        }
+        slot = slotData
       }
 
       const ticketCode = generateTicketCode()
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert({
-          slot_id: s.slotId, activity_id: slotActivityId,
+          event_id: activity?.event_id || null,
+          slot_id: isWalkin ? null : s.slotId,
+          activity_id: slotActivityId,
           first_name: s.firstName, last_name: s.lastName,
           email: email.toLowerCase(), phone: phone || null,
           payment_status: paymentStatus,
@@ -210,14 +218,17 @@ export async function POST(req: NextRequest) {
 
       if (bookingError) { console.error('Booking insert error:', bookingError); continue }
 
-      await supabase.from('slots').update({ booked_count: slot.booked_count + 1 }).eq('id', s.slotId)
+      if (!isWalkin && slot) {
+        await supabase.from('slots').update({ booked_count: slot.booked_count + 1 }).eq('id', s.slotId)
+      }
       bookingIds.push(booking.id)
 
       // Email par ticket
       if (paymentStatus === 'paid') {
         try {
-          const { data: slotEvent } = slot?.event_id
-            ? await supabase.from('events').select('name, location').eq('id', slot.event_id).single()
+          const eventId = activity?.event_id || slot?.event_id
+          const { data: slotEvent } = eventId
+            ? await supabase.from('events').select('name, location').eq('id', eventId).single()
             : { data: null }
           await getResend().emails.send({
             from: FROM_EMAIL,
@@ -226,7 +237,9 @@ export async function POST(req: NextRequest) {
             react: BookingConfirmationEmail({
               firstName: s.firstName, lastName: s.lastName,
               activityLabel: activity?.label || '',
-              day: s.day, startTime: s.startTime, endTime: s.endTime,
+              day: isWalkin ? '' : s.day,
+              startTime: isWalkin ? '' : s.startTime,
+              endTime: isWalkin ? '' : s.endTime,
               ticketCode, appUrl: process.env.NEXT_PUBLIC_APP_URL!,
               bookingId: booking.id,
               eventName: slotEvent?.name ?? undefined,

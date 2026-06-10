@@ -23,8 +23,9 @@ export async function POST(req: NextRequest) {
       totalAmount += pricePerSlot ?? 0
     }
 
-    // Vérifier disponibilité de tous les créneaux
+    // Vérifier disponibilité des créneaux (sauf walk-in sans créneau)
     for (const s of slots) {
+      if (s.walkin) continue
       const { data: slot } = await supabase.from('slots').select('*').eq('id', s.slotId).single()
       if (!slot) return NextResponse.json({ error: `Créneau introuvable` }, { status: 404 })
       if (slot.booked_count >= slot.capacity) {
@@ -44,9 +45,10 @@ export async function POST(req: NextRequest) {
       returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/sumup/webhook`,
     })
 
-    // Verrou temporaire sur tous les créneaux
+    // Verrou temporaire sur les créneaux (pas pour walk-in)
     const sessionId = `${email}-${Date.now()}`
     for (const s of slots) {
+      if (s.walkin || !s.slotId) continue
       await supabase.from('slot_locks').insert({
         slot_id: s.slotId,
         session_id: sessionId,

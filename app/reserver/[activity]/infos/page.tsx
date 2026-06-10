@@ -100,7 +100,7 @@ export default function InfosPage() {
           <div>
             <p className="font-semibold text-sm text-[var(--text-primary)]">{draft.activityLabel}</p>
             <p className="text-[var(--text-secondary)] text-xs">
-              {draft.slots.length} créneau{draft.slots.length > 1 ? 'x' : ''}
+              {draft.slots.length} {(draft as any).walkin ? `personne${draft.slots.length > 1 ? 's' : ''}` : `créneau${draft.slots.length > 1 ? 'x' : ''}`}
             </p>
           </div>
           <span className="font-bebas text-2xl text-[var(--accent)]">{formatPrice(totalPrice)}</span>
@@ -109,13 +109,15 @@ export default function InfosPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
           {/* Un nom par créneau */}
           {draft.slots.map((slot, i) => (
-            <div key={slot.slotId} className="card p-4">
+            <div key={slot.slotId || i} className="card p-4">
               <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-widest mb-1">
-                {slot.activityLabel || draft.activityLabel}
+                {(draft as any).walkin ? `Participant ${i + 1}` : (slot.activityLabel || draft.activityLabel)}
               </p>
-              <p className="text-sm font-semibold text-[var(--text-primary)] mb-3">
-                {getDayLabel(slot.day)} · {formatTime(slot.startTime)}
-              </p>
+              {!(draft as any).walkin && (
+                <p className="text-sm font-semibold text-[var(--text-primary)] mb-3">
+                  {getDayLabel(slot.day)} · {formatTime(slot.startTime)}
+                </p>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-[var(--text-secondary)] block mb-1.5">Prénom *</label>
