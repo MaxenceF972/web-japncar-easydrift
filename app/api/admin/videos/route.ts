@@ -3,10 +3,14 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { getResend, FROM_EMAIL } from '@/lib/resend'
 import { VideoEmail } from '@/emails/VideoEmail'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const supabase = createServiceClient() as any
+  const eventId = req.nextUrl.searchParams.get('event_id')
 
-  const { data: activities } = await supabase.from('activities').select('id').eq('name', 'bapteme')
+  let activitiesQuery = supabase.from('activities').select('id').eq('name', 'bapteme')
+  if (eventId) activitiesQuery = activitiesQuery.eq('event_id', eventId)
+
+  const { data: activities } = await activitiesQuery
   if (!activities?.length) return NextResponse.json({ bookings: [] })
 
   const { data: bookings } = await supabase

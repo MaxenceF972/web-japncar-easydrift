@@ -1,12 +1,15 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Calendar, QrCode, List, UserPlus, BarChart3, LogOut, MessageSquare, TrendingUp, Timer, MoreHorizontal, X, Video } from 'lucide-react'
+import { LayoutDashboard, Calendar, QrCode, List, UserPlus, BarChart3, LogOut, MessageSquare, TrendingUp, Timer, MoreHorizontal, X, Video, CalendarDays, ChevronDown } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
+import { useEvent } from '@/contexts/EventContext'
+import type { Event } from '@/lib/supabase/types'
 
 const NAV_ITEMS = [
   { href: '/admin/dashboard',      icon: LayoutDashboard, label: 'Dashboard' },
+  { href: '/admin/events',         icon: CalendarDays,    label: 'Événements' },
   { href: '/admin/planning',       icon: Calendar,        label: 'Planning' },
   { href: '/admin/scanner',        icon: QrCode,          label: 'Scanner' },
   { href: '/admin/reservations',   icon: List,            label: 'Réservations' },
@@ -18,9 +21,58 @@ const NAV_ITEMS = [
   { href: '/admin/previsionnel',   icon: TrendingUp,      label: 'Prévisionnel' },
 ]
 
-// 5 items visibles en bas, le reste dans "Plus"
-const MOBILE_PRIMARY = NAV_ITEMS.slice(1, 6) // Planning, Scanner, Réservations, Inscrire, Chrono
-const MOBILE_MORE    = [NAV_ITEMS[0], ...NAV_ITEMS.slice(6)] // Dashboard, Contacts, Stats, Prévisionnel
+const MOBILE_PRIMARY = NAV_ITEMS.slice(2, 7) // Planning, Scanner, Réservations, Inscrire, Chrono
+const MOBILE_MORE    = [NAV_ITEMS[0], NAV_ITEMS[1], ...NAV_ITEMS.slice(7)]
+
+const STATUS_COLORS: Record<string, string> = {
+  active:   'bg-green-500',
+  draft:    'bg-yellow-500',
+  archived: 'bg-[var(--border)]',
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  active:   'Actif',
+  draft:    'Brouillon',
+  archived: 'Archivé',
+}
+
+function EventSwitcher() {
+  const { events, selectedEvent, setSelectedEvent } = useEvent()
+  const [open, setOpen] = useState(false)
+
+  if (!selectedEvent) return null
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--bg-elevated)] hover:bg-[var(--border)] transition-colors text-left"
+      >
+        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUS_COLORS[selectedEvent.status]}`} />
+        <span className="flex-1 text-xs font-semibold text-[var(--text-primary)] truncate">{selectedEvent.name}</span>
+        <ChevronDown size={12} className="text-[var(--text-secondary)] flex-shrink-0" />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 mt-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-lg z-50 overflow-hidden">
+          {events.map(event => (
+            <button
+              key={event.id}
+              onClick={() => { setSelectedEvent(event); setOpen(false) }}
+              className={`w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-[var(--bg-elevated)] transition-colors ${event.id === selectedEvent.id ? 'bg-[var(--bg-elevated)]' : ''}`}
+            >
+              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUS_COLORS[event.status]}`} />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{event.name}</p>
+                <p className="text-[10px] text-[var(--text-secondary)]">{STATUS_LABELS[event.status]}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export function AdminNav() {
   const pathname = usePathname()
@@ -42,9 +94,10 @@ export function AdminNav() {
       <div className="hidden md:flex fixed left-0 top-0 bottom-0 w-56 bg-[var(--bg-card)] border-r border-[var(--border)] flex-col z-40">
         <div className="p-4 border-b border-[var(--border)]">
           <img src="/logo-easydrift.png" alt="EASYDRIFT" className="h-14 w-auto" />
-          <p className="text-[var(--text-secondary)] text-xs mt-1">Admin</p>
+          <p className="text-[var(--text-secondary)] text-xs mt-1 mb-3">Admin</p>
+          <EventSwitcher />
         </div>
-        <nav className="flex-1 p-3 space-y-1">
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {NAV_ITEMS.map(({ href, icon: Icon, label }) => (
             <a
               key={href}

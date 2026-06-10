@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { CheckCircle, Save, ChevronDown, ChevronUp, Loader2, Send, Plus, X, Search } from 'lucide-react'
 import { formatTime, getDayLabel } from '@/lib/utils'
+import { useEvent } from '@/contexts/EventContext'
 
 interface VideoOrder {
   id: string
@@ -23,6 +24,7 @@ interface BookingWithVideo {
 }
 
 export function VideosClient() {
+  const { selectedEvent } = useEvent()
   const [bookings, setBookings] = useState<BookingWithVideo[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -38,7 +40,10 @@ export function VideosClient() {
   const [sendAllProgress, setSendAllProgress] = useState<{ done: number; total: number } | null>(null)
 
   useEffect(() => {
-    fetch('/api/admin/videos')
+    const url = selectedEvent
+      ? `/api/admin/videos?event_id=${selectedEvent.id}`
+      : '/api/admin/videos'
+    fetch(url)
       .then(r => r.json())
       .then(d => {
         setBookings(d.bookings || [])
@@ -52,7 +57,7 @@ export function VideosClient() {
         setForms(f)
         setLoading(false)
       })
-  }, [])
+  }, [selectedEvent?.id])
 
   async function handleAddCustom() {
     if (!addForm.firstName || !addForm.lastName) return

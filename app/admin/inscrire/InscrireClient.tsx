@@ -1,24 +1,44 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { CheckCircle, Loader2, Zap, Car, Wind, Users, ChevronRight, Minus, Plus } from 'lucide-react'
 import type { Activity, Slot } from '@/lib/supabase/types'
 import { SlotPicker } from '@/components/client/SlotPicker'
 import { formatTime, formatPrice, getDayLabel } from '@/lib/utils'
 import { QRCodeSVG } from 'qrcode.react'
-import { EVENT_DAYS } from '@/lib/event-config'
+import { useEvent } from '@/contexts/EventContext'
 
 const ICONS: Record<string, any> = { bapteme: Zap, conduite: Car, carbooling: Wind, carbooling_passager: Users }
 
 type Step = 1 | 2 | 3 | 'done'
 
-interface Props { activities: Activity[] }
+interface Props { activities?: Activity[] }
 
-export function InscrireClient({ activities }: Props) {
+export function InscrireClient(_props: Props) {
+  const { selectedEvent } = useEvent()
+  const [activities, setActivities] = useState<Activity[]>([])
   const [step, setStep] = useState<Step>(1)
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null)
-  const [selectedDay, setSelectedDay] = useState<'saturday' | 'sunday'>('sunday')
+  const [selectedDayIdx, setSelectedDayIdx] = useState(0)
+
+  const eventDays = useMemo(() => {
+    if (!selectedEvent?.date_start) return []
+    const days: string[] = []
+    const start = new Date(selectedEvent.date_start)
+    const end = selectedEvent.date_end ? new Date(selectedEvent.date_end) : start
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      days.push(d.toISOString().split('T')[0])
+    }
+    return days
+  }, [selectedEvent])
+
+  useEffect(() => {
+    if (!selectedEvent) return
+    fetch(`/api/admin/activities?event_id=${selectedEvent.id}`)
+      .then(r => r.json())
+      .then(d => setActivities(d.activities || []))
+  }, [selectedEvent?.id])
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null)
   const [qty, setQty] = useState(1)
   const [persons, setPersons] = useState([{ firstName: '', lastName: '' }])
@@ -56,6 +76,7 @@ export function InscrireClient({ activities }: Props) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            event_id: selectedEvent?.id,
             activityId: selectedActivity.id,
             activityName: selectedActivity.name,
             slotId: selectedSlot.id,
@@ -86,7 +107,7 @@ export function InscrireClient({ activities }: Props) {
   function reset() {
     setStep(1)
     setSelectedActivity(null)
-    setSelectedDay('sunday')
+    setSelectedDayIdx(0)
     setSelectedSlot(null)
     setQty(1)
     setPersons([{ firstName: '', lastName: '' }])
@@ -152,23 +173,20 @@ export function InscrireClient({ activities }: Props) {
       {/* Step 2 */}
       {step === 2 && selectedActivity && (
         <div className="space-y-4">
-          <div className="flex gap-2">
-            {(['saturday', 'sunday'] as const).map(d => (
-              <button
-                key={d}
-                onClick={() => { setSelectedDay(d); setSelectedSlot(null); setQty(1); setPersons([{ firstName: '', lastName: '' }]) }}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                  selectedDay === d ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)]'
-                }`}
-              >
-                {d === 'saturday' ? 'Samedi' : 'Dimanche'}
-              </button>
-            ))}
-          </div>
+          {eventDays.length > 1 && (
+            <div className="flex gap-2">
+              {eventDays.map((day, idx) => (
+                <button key={day} onClick={() => { setSelectedDayIdx(idx); setSelectedSlot(null); setQty(1); setPersons([{ firstName: '', lastName: '' }]) }}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${selectedDayIdx === idx ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)]'}`}>
+                  {getDayLabel(day)}
+                </button>
+              ))}
+            </div>
+          )}
 
           <SlotPicker
             activity={selectedActivity}
-            day={EVENT_DAYS[selectedDay]}
+            day={eventDays[selectedDayIdx] || ''}
             onAdd={slot => {
               if (selectedSlot?.id === slot.id) {
                 changeQty(qty + 1)

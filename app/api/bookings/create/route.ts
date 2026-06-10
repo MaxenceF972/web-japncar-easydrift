@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       const {
         activityId, activityName, slotId, day, startTime, endTime,
         firstName, lastName, email, phone, sessionId,
-        paymentMode, booked_by_admin,
+        paymentMode, booked_by_admin, event_id,
       } = body
 
       let paymentStatus: 'paid' | 'cash' | 'terminal' | 'free' | 'pending' = 'pending'
@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert({
+          event_id: event_id || null,
           slot_id: slotId, activity_id: activityId,
           first_name: firstName, last_name: lastName,
           email: email?.toLowerCase() || '', phone: phone || null,

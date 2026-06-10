@@ -1,16 +1,17 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { formatTime } from '@/lib/utils'
 import type { Activity, Slot, Booking } from '@/lib/supabase/types'
 import { BookingDrawer } from '@/components/admin/BookingDrawer'
 import { Plus, Users, Check, Trash2, X, Pencil } from 'lucide-react'
+import { useEvent } from '@/contexts/EventContext'
 
 interface Props {
-  activities: Activity[]
-  eventDays: { saturday: string; sunday: string }
+  activities?: Activity[]
+  eventDays?: { saturday: string; sunday: string }
 }
 
 const PAYMENT_BADGES: Record<string, string> = {
@@ -26,9 +27,30 @@ const PAYMENT_LABELS: Record<string, string> = {
   paid: 'En ligne', cash: 'Cash', terminal: 'Terminal', free: 'Gratuit', pending: '⏳', cancelled: 'Annulé',
 }
 
-export function PlanningClient({ activities: initialActivities, eventDays }: Props) {
-  const [activities, setActivities] = useState<Activity[]>(initialActivities)
-  const [selectedDay, setSelectedDay] = useState<'saturday' | 'sunday'>('sunday')
+export function PlanningClient(_props: Props) {
+  const { selectedEvent } = useEvent()
+  const [activities, setActivities] = useState<Activity[]>([])
+  const [selectedDayIdx, setSelectedDayIdx] = useState(0)
+
+  // Dériver les jours depuis l'event sélectionné
+  const eventDays = useMemo(() => {
+    if (!selectedEvent?.date_start) return []
+    const days: string[] = []
+    const start = new Date(selectedEvent.date_start)
+    const end = selectedEvent.date_end ? new Date(selectedEvent.date_end) : start
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      days.push(d.toISOString().split('T')[0])
+    }
+    return days
+  }, [selectedEvent])
+
+  // Charger les activités de l'event
+  useEffect(() => {
+    if (!selectedEvent) return
+    fetch(`/api/admin/activities?event_id=${selectedEvent.id}`)
+      .then(r => r.json())
+      .then(d => setActivities(d.activities || []))
+  }, [selectedEvent?.id])
   const [allSlots, setAllSlots] = useState<Record<string, (Slot & { bookings: Booking[] })[]>>({})
   const [loading, setLoading] = useState(true)
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
@@ -69,7 +91,7 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
   }
 
   const supabase = createClient()
-  const currentDay = eventDays[selectedDay]
+  const currentDay = eventDays[selectedDayIdx] || ''
 
   const fetchAllSlots = useCallback(async () => {
     setLoading(true)
@@ -175,22 +197,24 @@ export function PlanningClient({ activities: initialActivities, eventDays }: Pro
       <h1 className="font-bebas text-3xl text-[var(--text-primary)] mb-4">Planning Live</h1>
 
       {/* Day toggle */}
-      <div className="flex gap-2 mb-6">
-        {([{ key: 'saturday', label: 'Samedi' }, { key: 'sunday', label: 'Dimanche' }] as const).map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setSelectedDay(key)}
-            className={[
-              'px-4 py-2 rounded-xl text-sm font-medium transition-colors',
-              selectedDay === key
-                ? 'bg-[var(--accent)] text-white'
-                : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border)]',
-            ].join(' ')}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {eventDays.length > 1 && (
+        <div className="flex gap-2 mb-6">
+          {eventDays.map((day, idx) => (
+            <button
+              key={day}
+              onClick={() => setSelectedDayIdx(idx)}
+              className={[
+                'px-4 py-2 rounded-xl text-sm font-medium transition-colors',
+                selectedDayIdx === idx
+                  ? 'bg-[var(--accent)] text-white'
+                  : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border)]',
+              ].join(' ')}
+            >
+              {new Date(day).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' })}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Error banner */}
       {deleteError && (

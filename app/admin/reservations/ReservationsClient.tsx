@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Search, Download, RefreshCw } from 'lucide-react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
+import { Search, Download, RefreshCw, Loader2 } from 'lucide-react'
 import type { Booking } from '@/lib/supabase/types'
 import { formatTime, getDayLabel } from '@/lib/utils'
 import { BookingDrawer } from '@/components/admin/BookingDrawer'
+import { useEvent } from '@/contexts/EventContext'
 
 const PAYMENT_LABELS: Record<string, string> = {
   paid: 'En ligne', cash: 'Cash', terminal: 'Terminal', free: 'Gratuit', pending: 'En attente', cancelled: 'Annulé',
@@ -14,35 +14,45 @@ const PAYMENT_COLORS: Record<string, string> = {
   paid: 'badge-green', cash: 'badge-purple', terminal: 'badge-yellow', free: 'badge-gray', pending: 'badge-red', cancelled: 'badge-red',
 }
 
-interface Props {
-  bookings: Booking[]
-}
+interface Props { bookings?: Booking[] }
 
-export function ReservationsClient({ bookings: initialBookings }: Props) {
-  const router = useRouter()
+export function ReservationsClient(_: Props) {
+  const { selectedEvent } = useEvent()
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [search, setSearch] = useState('')
   const [filterActivity, setFilterActivity] = useState('all')
   const [filterPayment, setFilterPayment] = useState('all')
   const [filterCheckin, setFilterCheckin] = useState('all')
-  const [filterDay, setFilterDay] = useState('2026-05-31')
+  const [filterDay, setFilterDay] = useState('all')
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
-  const [bookings, setBookings] = useState(initialBookings)
-  const [refreshing, setRefreshing] = useState(false)
 
-  // Keep local state in sync when server re-renders with fresh data
-  useEffect(() => { setBookings(initialBookings) }, [initialBookings])
+  const fetchBookings = useCallback(async () => {
+    if (!selectedEvent) return
+    const res = await fetch(`/api/admin/reservations?event_id=${selectedEvent.id}`)
+    const data = await res.json()
+    setBookings(data.bookings || [])
+    setLoading(false)
+    setRefreshing(false)
+  }, [selectedEvent?.id])
 
-  // Auto-refresh every 30s during the event
   useEffect(() => {
-    const id = setInterval(() => router.refresh(), 30_000)
-    return () => clearInterval(id)
-  }, [router])
+    setLoading(true)
+    fetchBookings()
+  }, [fetchBookings])
 
-  async function handleRefresh() {
-    setRefreshing(true)
-    router.refresh()
-    setTimeout(() => setRefreshing(false), 1000)
-  }
+  // Compute event days dynamically
+  const eventDays = useMemo(() => {
+    if (!selectedEvent?.date_start) return []
+    const days: string[] = []
+    const start = new Date(selectedEvent.date_start)
+    const end = selectedEvent.date_end ? new Date(selectedEvent.date_end) : start
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      days.push(d.toISOString().split('T')[0])
+    }
+    return days
+  }, [selectedEvent])
 
   const activities = useMemo(() => {
     const acts = new Map<string, string>()
@@ -68,32 +78,33 @@ export function ReservationsClient({ bookings: initialBookings }: Props) {
   function handleExportCSV() {
     const headers = ['Prénom', 'Nom', 'Email', 'Téléphone', 'Activité', 'Jour', 'Heure', 'Paiement', 'Check-in', 'Ticket', 'Créé le']
     const rows = filtered.map(b => [
-      b.first_name,
-      b.last_name,
-      b.email,
-      b.phone || '',
-      (b as any).activity?.label || '',
-      (b as any).slot?.day || '',
-      (b as any).slot?.start_time || '',
-      b.payment_status,
-      b.checked_in ? 'Oui' : 'Non',
-      b.ticket_code || '',
-      b.created_at,
+      b.first_name, b.last_name, b.email, b.phone || '',
+      (b as any).activity?.label || '', (b as any).slot?.day || '', (b as any).slot?.start_time || '',
+      b.payment_status, b.checked_in ? 'Oui' : 'Non', b.ticket_code || '', b.created_at,
     ])
     const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n')
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
-    link.download = `reservations-easydrift.csv`
+    link.download = `reservations-${selectedEvent?.slug || 'export'}.csv`
     link.click()
   }
+
+  if (loading) return (
+    <div className="md:ml-56 p-5 flex items-center justify-center py-20">
+      <Loader2 size={32} className="text-[var(--accent)] animate-spin" />
+    </div>
+  )
 
   return (
     <div className="md:ml-56 p-5">
       <div className="flex items-center justify-between mb-5">
-        <h1 className="font-bebas text-3xl text-[var(--text-primary)]">Réservations</h1>
+        <div>
+          <h1 className="font-bebas text-3xl text-[var(--text-primary)]">Réservations</h1>
+          {selectedEvent && <p className="text-[var(--text-secondary)] text-xs">{selectedEvent.name}</p>}
+        </div>
         <div className="flex gap-2">
-          <button onClick={handleRefresh} className="btn-secondary text-sm py-2 px-3" title="Actualiser">
+          <button onClick={() => { setRefreshing(true); fetchBookings() }} className="btn-secondary text-sm py-2 px-3">
             <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
           </button>
           <button onClick={handleExportCSV} className="btn-secondary text-sm py-2 px-3">
@@ -107,45 +118,21 @@ export function ReservationsClient({ bookings: initialBookings }: Props) {
       <div className="space-y-3 mb-5">
         <div className="relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" />
-          <input
-            className="input-field pl-9"
-            placeholder="Rechercher par nom ou email..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+          <input className="input-field pl-9" placeholder="Rechercher par nom ou email..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-
         <div className="flex gap-2 overflow-x-auto pb-1">
-          <select
-            className="input-field text-sm py-2 flex-shrink-0"
-            style={{ width: 'auto', minWidth: 120 }}
-            value={filterActivity}
-            onChange={e => setFilterActivity(e.target.value)}
-          >
-            <option value="all">Toutes les activités</option>
-            {activities.map(([id, label]) => (
-              <option key={id} value={id}>{label}</option>
-            ))}
+          <select className="input-field text-sm py-2 flex-shrink-0" style={{ width: 'auto', minWidth: 120 }} value={filterActivity} onChange={e => setFilterActivity(e.target.value)}>
+            <option value="all">Toutes activités</option>
+            {activities.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
           </select>
-
-          <select
-            className="input-field text-sm py-2 flex-shrink-0"
-            style={{ width: 'auto', minWidth: 110 }}
-            value={filterDay}
-            onChange={e => setFilterDay(e.target.value)}
-          >
-            <option value="all">Tous les jours</option>
-            <option value="2026-05-30">Samedi</option>
-            <option value="2026-05-31">Dimanche</option>
-          </select>
-
-          <select
-            className="input-field text-sm py-2 flex-shrink-0"
-            style={{ width: 'auto', minWidth: 130 }}
-            value={filterPayment}
-            onChange={e => setFilterPayment(e.target.value)}
-          >
-            <option value="all">Tout statut paiement</option>
+          {eventDays.length > 1 && (
+            <select className="input-field text-sm py-2 flex-shrink-0" style={{ width: 'auto', minWidth: 110 }} value={filterDay} onChange={e => setFilterDay(e.target.value)}>
+              <option value="all">Tous les jours</option>
+              {eventDays.map(d => <option key={d} value={d}>{getDayLabel(d)}</option>)}
+            </select>
+          )}
+          <select className="input-field text-sm py-2 flex-shrink-0" style={{ width: 'auto', minWidth: 130 }} value={filterPayment} onChange={e => setFilterPayment(e.target.value)}>
+            <option value="all">Tout statut</option>
             <option value="paid">En ligne</option>
             <option value="cash">Cash</option>
             <option value="terminal">Terminal</option>
@@ -153,13 +140,7 @@ export function ReservationsClient({ bookings: initialBookings }: Props) {
             <option value="pending">En attente</option>
             <option value="cancelled">Annulé</option>
           </select>
-
-          <select
-            className="input-field text-sm py-2 flex-shrink-0"
-            style={{ width: 'auto', minWidth: 120 }}
-            value={filterCheckin}
-            onChange={e => setFilterCheckin(e.target.value)}
-          >
+          <select className="input-field text-sm py-2 flex-shrink-0" style={{ width: 'auto', minWidth: 120 }} value={filterCheckin} onChange={e => setFilterCheckin(e.target.value)}>
             <option value="all">Tous check-ins</option>
             <option value="yes">Check-in fait</option>
             <option value="no">Pas encore</option>
@@ -167,70 +148,44 @@ export function ReservationsClient({ bookings: initialBookings }: Props) {
         </div>
       </div>
 
-      <p className="text-[var(--text-secondary)] text-xs mb-3">
-        {filtered.length} réservation{filtered.length !== 1 ? 's' : ''}
-      </p>
+      <p className="text-[var(--text-secondary)] text-xs mb-3">{filtered.length} réservation{filtered.length !== 1 ? 's' : ''}</p>
 
-      {/* Liste */}
       <div className="space-y-2">
         {filtered.map(booking => {
           const slot = (booking as any).slot
           const activity = (booking as any).activity
           return (
-            <button
-              key={booking.id}
-              onClick={() => setSelectedBooking(booking)}
+            <button key={booking.id} onClick={() => setSelectedBooking(booking)}
               className="w-full card p-4 text-left hover:border-[var(--accent)] transition-colors"
-              style={activity?.color ? { borderLeft: `3px solid ${activity.color}` } : {}}
-            >
+              style={activity?.color ? { borderLeft: `3px solid ${activity.color}` } : {}}>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  {/* Nom */}
                   <div className="flex items-center gap-2 mb-1">
-                    <p className="font-bold text-[var(--text-primary)] text-sm">
-                      {booking.first_name} {booking.last_name.toUpperCase()}
-                    </p>
-                    {booking.checked_in && (
-                      <span className="badge badge-green text-[10px] py-0">✓ Scanné</span>
-                    )}
+                    <p className="font-bold text-[var(--text-primary)] text-sm">{booking.first_name} {booking.last_name.toUpperCase()}</p>
+                    {booking.checked_in && <span className="badge badge-green text-[10px] py-0">✓ Scanné</span>}
                   </div>
-                  {/* Activité */}
-                  <p className="font-semibold text-[var(--accent)] text-sm">
-                    {activity?.label || '—'}
-                  </p>
-                  {/* Jour + heure */}
+                  <p className="font-semibold text-[var(--accent)] text-sm">{activity?.label || '—'}</p>
                   <p className="text-[var(--text-primary)] text-xs mt-0.5">
-                    {slot ? `${getDayLabel(slot.day)} · ${formatTime(slot.start_time)} — ${formatTime(slot.end_time)}` : '—'}
+                    {slot ? `${getDayLabel(slot.day)} · ${formatTime(slot.start_time)} — ${formatTime(slot.end_time)}` : 'Walk-in'}
                   </p>
-                  {/* Email */}
                   <p className="text-[var(--text-secondary)] text-xs mt-0.5 truncate">{booking.email}</p>
                 </div>
-                <span className={`badge ${PAYMENT_COLORS[booking.payment_status]} flex-shrink-0 mt-0.5`}>
-                  {PAYMENT_LABELS[booking.payment_status]}
-                </span>
+                <span className={`badge ${PAYMENT_COLORS[booking.payment_status]} flex-shrink-0 mt-0.5`}>{PAYMENT_LABELS[booking.payment_status]}</span>
               </div>
             </button>
           )
         })}
-        {filtered.length === 0 && (
-          <p className="text-[var(--text-secondary)] text-sm text-center py-12">
-            Aucune réservation trouvée
-          </p>
-        )}
+        {filtered.length === 0 && <p className="text-[var(--text-secondary)] text-sm text-center py-12">Aucune réservation trouvée</p>}
       </div>
 
       <BookingDrawer
         booking={selectedBooking}
         onClose={() => setSelectedBooking(null)}
         onCheckin={async (booking) => {
-          await fetch('/api/bookings/checkin', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ticketCode: booking.ticket_code, agentName: 'Admin' }),
-          })
-          router.refresh()
+          await fetch('/api/bookings/checkin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ticketCode: booking.ticket_code, agentName: 'Admin' }) })
+          fetchBookings()
         }}
-        onRefresh={() => router.refresh()}
+        onRefresh={fetchBookings}
       />
     </div>
   )
