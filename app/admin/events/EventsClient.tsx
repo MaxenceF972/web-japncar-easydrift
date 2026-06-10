@@ -359,25 +359,30 @@ function EventConfigPanel({ event, onClose, onUpdated }: { event: Event; onClose
                 </button>
               </div>
             ) : (
-              <div key={a.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)]">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: a.color }} />
-                  <div>
-                    <p className="text-sm font-medium text-[var(--text-primary)]">{a.label}</p>
-                    <p className="text-xs text-[var(--text-secondary)]">
-                      {(a.price / 100).toFixed(2)} € · {a.type === 'walkin' ? 'Walk-in' : 'Créneaux'} · cap. {a.capacity}
-                    </p>
+              <div key={a.id} className="p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)]">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                    <div className="w-3 h-3 rounded-full flex-shrink-0 mt-1" style={{ backgroundColor: a.color }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-[var(--text-primary)]">{a.label}</p>
+                      <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                        {(a.price / 100).toFixed(2)} € · {a.type === 'walkin' ? 'Walk-in' : 'Créneaux'} · cap. {a.capacity}
+                      </p>
+                      {a.description && (
+                        <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed opacity-70 line-clamp-2">{a.description}</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => startEditActivity(a)}
-                    className="p-1.5 rounded-lg hover:bg-[var(--accent)]/10 text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">
-                    <Pencil size={13} />
-                  </button>
-                  <button onClick={() => handleDeleteActivity(a.id)}
-                    className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-400 transition-colors">
-                    <Trash2 size={13} />
-                  </button>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button onClick={() => startEditActivity(a)}
+                      className="p-1.5 rounded-lg hover:bg-[var(--accent)]/10 text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">
+                      <Pencil size={13} />
+                    </button>
+                    <button onClick={() => handleDeleteActivity(a.id)}
+                      className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-400 transition-colors">
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
