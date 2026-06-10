@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
 
     const { data: booking } = await supabase
       .from('bookings')
-      .select(`*, slot:slots(*), activity:activities(*)`)
+      .select(`*, slot:slots(*), activity:activities(*), event:events(name, location)`)
       .eq('id', bookingId)
       .single()
 
@@ -31,6 +31,8 @@ export async function POST(req: NextRequest) {
         ticketCode: booking.ticket_code!,
         appUrl: process.env.NEXT_PUBLIC_APP_URL!,
         bookingId: booking.id,
+        eventName: booking.event?.name ?? undefined,
+        eventLocation: booking.event?.location ?? undefined,
       }),
     })
 

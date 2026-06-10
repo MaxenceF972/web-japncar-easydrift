@@ -19,7 +19,7 @@ interface ActivityCardProps {
 
 export function ActivityCard({ activity, index = 0 }: ActivityCardProps) {
   const router = useRouter()
-  const Icon = ACTIVITY_ICONS[activity.name as keyof typeof ACTIVITY_ICONS]
+  const Icon = ACTIVITY_ICONS[activity.name as keyof typeof ACTIVITY_ICONS] ?? Zap
 
   return (
     <motion.div

@@ -14,12 +14,15 @@ interface Props {
   ticketCode: string
   appUrl: string
   bookingId: string
+  eventName?: string
+  eventLocation?: string
 }
 
 export function BookingConfirmationEmail({
   firstName, lastName, activityLabel, day, startTime, endTime,
-  ticketCode, appUrl, bookingId,
+  ticketCode, appUrl, bookingId, eventName, eventLocation,
 }: Props) {
+  const isWalkin = !day || !startTime
   const confirmationUrl = `${appUrl}/confirmation/${bookingId}`
   const qrData = `${appUrl}/admin/scanner?code=${ticketCode}`
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}&bgcolor=ffffff&color=000000&margin=10`
@@ -39,7 +42,7 @@ export function BookingConfirmationEmail({
               width="160"
               style={{ margin: '0 auto', display: 'block' }}
             />
-            <Text style={subTitle}>JAPN Car à Montlhéry</Text>
+            {eventName && <Text style={subTitle}>{eventName}</Text>}
           </Section>
 
           {/* Confirmation */}
@@ -61,16 +64,18 @@ export function BookingConfirmationEmail({
                 <Text style={detail_value}>{activityLabel}</Text>
               </Column>
             </Row>
-            <Row>
-              <Column>
-                <Text style={detail_label}>Date</Text>
-                <Text style={detail_value}>{formatDate(day)}</Text>
-              </Column>
-              <Column>
-                <Text style={detail_label}>Horaire</Text>
-                <Text style={detail_value}>{formatTime(startTime)} — {formatTime(endTime)}</Text>
-              </Column>
-            </Row>
+            {!isWalkin && (
+              <Row>
+                <Column>
+                  <Text style={detail_label}>Date</Text>
+                  <Text style={detail_value}>{formatDate(day)}</Text>
+                </Column>
+                <Column>
+                  <Text style={detail_label}>Horaire</Text>
+                  <Text style={detail_value}>{formatTime(startTime)} — {formatTime(endTime)}</Text>
+                </Column>
+              </Row>
+            )}
             <Row>
               <Column>
                 <Text style={detail_label}>Participant</Text>
@@ -117,15 +122,24 @@ export function BookingConfirmationEmail({
           {/* Infos pratiques */}
           <Section style={section}>
             <Text style={label}>INFORMATIONS PRATIQUES</Text>
-            <Text style={body_text}>📍 Circuit de Montlhéry, 91310 Linas</Text>
-            <Text style={body_text}>🚗 Parking gratuit sur place</Text>
-            <Text style={body_text}>⏰ Présentez-vous 20 minutes avant votre créneau</Text>
-            <Text style={body_text}>📱 Votre QR code sera scanné à l'entrée</Text>
+            {eventLocation && <Text style={body_text}>📍 {eventLocation}</Text>}
+            {isWalkin ? (
+              <>
+                <Text style={body_text}>🎫 Présentez-vous avec votre QR CODE</Text>
+                <Text style={body_text}>📱 Votre QR code sera scanné à l'entrée</Text>
+              </>
+            ) : (
+              <>
+                <Text style={body_text}>🚗 Parking gratuit sur place</Text>
+                <Text style={body_text}>⏰ Présentez-vous 20 minutes avant votre créneau</Text>
+                <Text style={body_text}>📱 Votre QR code sera scanné à l'entrée</Text>
+              </>
+            )}
           </Section>
 
           {/* Footer */}
           <Section style={footer}>
-            <Text style={footer_text}>EASYDRIFT JAPN Car · maxence.fortier@easydriftdts.com</Text>
+            <Text style={footer_text}>EASYDRIFT {eventName ?? 'JAPN Car'} · maxence.fortier@easydriftdts.com</Text>
             <Text style={footer_text}>En cas de problème, répondez à cet email.</Text>
           </Section>
         </Container>

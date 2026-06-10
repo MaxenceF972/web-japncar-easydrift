@@ -46,7 +46,10 @@ export async function POST(req: NextRequest) {
 
       if (email && paymentStatus !== 'pending') {
         try {
-          const { data: activity } = await supabase.from('activities').select('*').eq('id', activityId).single()
+          const [{ data: activity }, { data: event }] = await Promise.all([
+            supabase.from('activities').select('*').eq('id', activityId).single(),
+            event_id ? supabase.from('events').select('name, location').eq('id', event_id).single() : Promise.resolve({ data: null }),
+          ])
           await getResend().emails.send({
             from: FROM_EMAIL,
             to: email,
@@ -56,6 +59,8 @@ export async function POST(req: NextRequest) {
               day: '', startTime: '', endTime: '', ticketCode,
               appUrl: process.env.NEXT_PUBLIC_APP_URL!,
               bookingId: booking.id,
+              eventName: event?.name ?? undefined,
+              eventLocation: event?.location ?? undefined,
             }),
           })
           await supabase.from('bookings').update({ ticket_sent_at: new Date().toISOString() }).eq('id', booking.id)
@@ -117,7 +122,10 @@ export async function POST(req: NextRequest) {
 
       if (email && paymentStatus !== 'pending') {
         try {
-          const { data: activity } = await supabase.from('activities').select('*').eq('id', activityId).single()
+          const [{ data: activity }, { data: event }] = await Promise.all([
+            supabase.from('activities').select('*').eq('id', activityId).single(),
+            event_id ? supabase.from('events').select('name, location').eq('id', event_id).single() : Promise.resolve({ data: null }),
+          ])
           await getResend().emails.send({
             from: FROM_EMAIL,
             to: email,
@@ -127,6 +135,8 @@ export async function POST(req: NextRequest) {
               day, startTime, endTime, ticketCode,
               appUrl: process.env.NEXT_PUBLIC_APP_URL!,
               bookingId: booking.id,
+              eventName: event?.name ?? undefined,
+              eventLocation: event?.location ?? undefined,
             }),
           })
           await supabase.from('bookings').update({ ticket_sent_at: new Date().toISOString() }).eq('id', booking.id)
@@ -206,6 +216,9 @@ export async function POST(req: NextRequest) {
       // Email par ticket
       if (paymentStatus === 'paid') {
         try {
+          const { data: slotEvent } = slot?.event_id
+            ? await supabase.from('events').select('name, location').eq('id', slot.event_id).single()
+            : { data: null }
           await getResend().emails.send({
             from: FROM_EMAIL,
             to: email,
@@ -216,6 +229,8 @@ export async function POST(req: NextRequest) {
               day: s.day, startTime: s.startTime, endTime: s.endTime,
               ticketCode, appUrl: process.env.NEXT_PUBLIC_APP_URL!,
               bookingId: booking.id,
+              eventName: slotEvent?.name ?? undefined,
+              eventLocation: slotEvent?.location ?? undefined,
             }),
           })
           await supabase.from('bookings').update({ ticket_sent_at: new Date().toISOString() }).eq('id', booking.id)
