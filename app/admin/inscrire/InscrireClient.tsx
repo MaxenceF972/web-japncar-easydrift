@@ -164,7 +164,7 @@ export function InscrireClient(_props: Props) {
       {step === 1 && (
         <div className="space-y-3">
           {activities.map(activity => {
-            const Icon = ICONS[activity.name]
+            const Icon = ICONS[activity.name] || Zap
             return (
               <button
                 key={activity.id}
