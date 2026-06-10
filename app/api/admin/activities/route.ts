@@ -1,11 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient, createClient } from '@/lib/supabase/server'
-
-async function checkAuth() {
-  const supabase = createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  return session?.user ?? null
-}
+import { createServiceClient } from '@/lib/supabase/server'
 
 // Lister les activités d'un événement
 export async function GET(req: NextRequest) {
@@ -22,7 +16,6 @@ export async function GET(req: NextRequest) {
 
 // Créer une activité pour un événement
 export async function POST(req: NextRequest) {
-  if (!await checkAuth()) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
   const supabase = createServiceClient() as any
   const body = await req.json()
   const { event_id, name, label, price, duration, color, description, capacity, type } = body
@@ -45,8 +38,6 @@ export async function DELETE(req: NextRequest) {
 
 // Mettre à jour une activité (tarif, label, etc.)
 export async function PATCH(req: NextRequest) {
-  if (!await checkAuth()) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
-
   const { activityId, price } = await req.json() as { activityId: string; price: number }
   if (!activityId) return NextResponse.json({ error: 'ID manquant' }, { status: 400 })
   if (price === undefined || price < 0) return NextResponse.json({ error: 'Prix invalide' }, { status: 400 })
