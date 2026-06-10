@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Plus, X, ChevronRight, CheckCircle, Archive, FileEdit, Loader2, Calendar, MapPin, Settings2, ToggleLeft, ToggleRight } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Plus, X, CheckCircle, Archive, Loader2, Calendar, MapPin, Settings2, ToggleLeft, ToggleRight, Trash2, Zap } from 'lucide-react'
 import { useEvent } from '@/contexts/EventContext'
 import type { Event, EventConfig, EventSiteContent } from '@/lib/supabase/types'
 
@@ -120,13 +120,58 @@ function CreateEventForm({ onCreated }: { onCreated: () => void }) {
   )
 }
 
+const PRESET_COLORS = ['#F47B20', '#3B82F6', '#22C55E', '#A855F7', '#EF4444']
+
 // ─── Panneau de configuration d'un event ─────────────────────────────────────
 function EventConfigPanel({ event, onClose, onUpdated }: { event: Event; onClose: () => void; onUpdated: () => void }) {
+  const { setSelectedEvent } = useEvent()
   const [config, setConfig] = useState<EventConfig>({ ...DEFAULT_CONFIG, ...(event.config as EventConfig) })
   const [site, setSite] = useState<EventSiteContent>({ ...DEFAULT_SITE, ...(event.site_content as EventSiteContent) })
   const [info, setInfo] = useState({ name: event.name, date_start: event.date_start || '', date_end: event.date_end || '', location: event.location || '' })
   const [saving, setSaving] = useState(false)
   const [activating, setActivating] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  // Activités
+  const [activities, setActivities] = useState<any[]>([])
+  const [showAddAct, setShowAddAct] = useState(false)
+  const [actForm, setActForm] = useState({ label: '', price: '', type: 'scheduled', color: '#F47B20', capacity: '1' })
+  const [savingAct, setSavingAct] = useState(false)
+
+  useEffect(() => {
+    fetch(`/api/admin/activities?event_id=${event.id}`)
+      .then(r => r.json())
+      .then(d => setActivities(d.activities || []))
+  }, [event.id])
+
+  async function handleAddActivity() {
+    if (!actForm.label) return
+    setSavingAct(true)
+    const name = slugify(actForm.label)
+    const resp = await fetch('/api/admin/activities', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event_id: event.id, name, label: actForm.label,
+        price: Math.round(parseFloat(actForm.price || '0') * 100),
+        type: actForm.type, color: actForm.color,
+        capacity: parseInt(actForm.capacity) || 1,
+      }),
+    })
+    const data = await resp.json()
+    setSavingAct(false)
+    if (resp.ok) {
+      setActivities(prev => [...prev, data.activity])
+      setActForm({ label: '', price: '', type: 'scheduled', color: '#F47B20', capacity: '1' })
+      setShowAddAct(false)
+    }
+  }
+
+  async function handleDeleteActivity(actId: string) {
+    if (!confirm('Supprimer cette activité ?')) return
+    await fetch(`/api/admin/activities?id=${actId}`, { method: 'DELETE' })
+    setActivities(prev => prev.filter((a: any) => a.id !== actId))
+  }
 
   async function handleSave() {
     setSaving(true)
@@ -157,6 +202,16 @@ function EventConfigPanel({ event, onClose, onUpdated }: { event: Event; onClose
       body: JSON.stringify({ id: event.id, status: 'archived' }),
     })
     onUpdated()
+  }
+
+  async function handleDelete() {
+    if (!confirm(`Supprimer "${event.name}" et toutes ses données définitivement ?`)) return
+    setDeleting(true)
+    await fetch(`/api/admin/events?id=${event.id}`, { method: 'DELETE' })
+    setDeleting(false)
+    setSelectedEvent(null as any)
+    onUpdated()
+    onClose()
   }
 
   return (
@@ -198,6 +253,90 @@ function EventConfigPanel({ event, onClose, onUpdated }: { event: Event; onClose
               <label className="text-xs text-[var(--text-secondary)] block mb-1">Lieu</label>
               <input className="input-field" value={info.location} onChange={e => setInfo(f => ({ ...f, location: e.target.value }))} />
             </div>
+          </div>
+
+          {/* Activités */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-widest">
+                Activités ({activities.length})
+              </p>
+              <button onClick={() => setShowAddAct(v => !v)}
+                className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
+                {showAddAct ? <X size={12} /> : <Plus size={12} />}
+                {showAddAct ? 'Annuler' : 'Ajouter'}
+              </button>
+            </div>
+
+            {activities.map((a: any) => (
+              <div key={a.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: a.color }} />
+                  <div>
+                    <p className="text-sm font-medium text-[var(--text-primary)]">{a.label}</p>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      {(a.price / 100).toFixed(2)} € · {a.type === 'walkin' ? 'Walk-in' : 'Créneaux'} · cap. {a.capacity}
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => handleDeleteActivity(a.id)}
+                  className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-400 transition-colors">
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            ))}
+
+            {activities.length === 0 && !showAddAct && (
+              <p className="text-xs text-[var(--text-secondary)] text-center py-3">Aucune activité — ajoutez-en une pour pouvoir inscrire des participants</p>
+            )}
+
+            {showAddAct && (
+              <div className="p-4 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/5 space-y-3">
+                <p className="text-xs font-semibold text-[var(--accent)] uppercase tracking-widest">Nouvelle activité</p>
+                <div>
+                  <label className="text-xs text-[var(--text-secondary)] block mb-1">Nom affiché *</label>
+                  <input className="input-field text-sm" placeholder="Baptême EASYDRIFT"
+                    value={actForm.label} onChange={e => setActForm(f => ({ ...f, label: e.target.value }))} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-[var(--text-secondary)] block mb-1">Prix (€)</label>
+                    <input type="number" min="0" step="0.5" className="input-field text-sm" placeholder="50"
+                      value={actForm.price} onChange={e => setActForm(f => ({ ...f, price: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-[var(--text-secondary)] block mb-1">Capacité / créneau</label>
+                    <input type="number" min="1" className="input-field text-sm" placeholder="1"
+                      value={actForm.capacity} onChange={e => setActForm(f => ({ ...f, capacity: e.target.value }))} />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-[var(--text-secondary)] block mb-2">Type</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[{ v: 'scheduled', label: 'Créneaux' }, { v: 'walkin', label: 'Walk-in' }].map(({ v, label }) => (
+                      <button key={v} onClick={() => setActForm(f => ({ ...f, type: v }))}
+                        className={`py-2 rounded-xl text-xs font-medium border transition-colors ${actForm.type === v ? 'bg-[var(--accent)] border-[var(--accent)] text-white' : 'bg-[var(--bg-elevated)] border-[var(--border)] text-[var(--text-secondary)]'}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-[var(--text-secondary)] block mb-2">Couleur</label>
+                  <div className="flex gap-2">
+                    {PRESET_COLORS.map(c => (
+                      <button key={c} onClick={() => setActForm(f => ({ ...f, color: c }))}
+                        className={`w-8 h-8 rounded-full border-2 transition-all ${actForm.color === c ? 'border-white scale-110' : 'border-transparent'}`}
+                        style={{ backgroundColor: c }} />
+                    ))}
+                  </div>
+                </div>
+                <button onClick={handleAddActivity} disabled={savingAct || !actForm.label}
+                  className="btn-cta w-full font-bebas text-sm py-2.5 disabled:opacity-40">
+                  {savingAct ? <Loader2 size={14} className="animate-spin" /> : 'AJOUTER L\'ACTIVITÉ'}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Modules */}
@@ -263,6 +402,12 @@ function EventConfigPanel({ event, onClose, onUpdated }: { event: Event; onClose
                 Archiver
               </button>
             )}
+
+            <button onClick={handleDelete} disabled={deleting}
+              className="w-full py-3 rounded-xl border border-red-500/30 bg-red-500/5 text-red-400 text-sm font-semibold flex items-center justify-center gap-2 hover:bg-red-500/10 transition-colors disabled:opacity-40">
+              {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+              Supprimer l'événement
+            </button>
           </div>
         </div>
       </div>

@@ -34,6 +34,15 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ activity: data })
 }
 
+export async function DELETE(req: NextRequest) {
+  const supabase = createServiceClient() as any
+  const id = req.nextUrl.searchParams.get('id')
+  if (!id) return NextResponse.json({ error: 'id requis' }, { status: 400 })
+  await supabase.from('slots').delete().eq('activity_id', id)
+  await supabase.from('activities').delete().eq('id', id)
+  return NextResponse.json({ ok: true })
+}
+
 // Mettre à jour une activité (tarif, label, etc.)
 export async function PATCH(req: NextRequest) {
   if (!await checkAuth()) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
