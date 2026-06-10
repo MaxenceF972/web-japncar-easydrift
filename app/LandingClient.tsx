@@ -3,18 +3,38 @@
 import { useEffect, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronDown, MapPin, Clock, Shield, Ticket, Send, Loader2, CheckCircle, Trash2 } from 'lucide-react'
-import type { Activity } from '@/lib/supabase/types'
+import type { Activity, Event } from '@/lib/supabase/types'
 import { ActivityCard } from '@/components/client/ActivityCard'
 
-// Date de l'événement — à adapter
-const EVENT_DATE = new Date('2026-05-30T09:00:00')
+function formatEventDates(start: string | null, end: string | null): string {
+  if (!start) return ''
+  const s = new Date(start + 'T12:00:00')
+  if (!end || end === start) {
+    return s.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+  }
+  const e = new Date(end + 'T12:00:00')
+  if (s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear()) {
+    return `${s.getDate()}/${e.getDate()} ${s.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}`
+  }
+  return `${s.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} / ${e.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}`
+}
 
-function Countdown() {
+function formatEventDaysBadge(start: string | null, end: string | null): string {
+  if (!start) return ''
+  const DAYS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
+  const s = new Date(start + 'T12:00:00')
+  if (!end || end === start) return DAYS[s.getDay()]
+  const e = new Date(end + 'T12:00:00')
+  return `${DAYS[s.getDay()]} & ${DAYS[e.getDay()]}`
+}
+
+function Countdown({ eventDate }: { eventDate: Date | null }) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 })
 
   useEffect(() => {
     function compute() {
-      const diff = EVENT_DATE.getTime() - Date.now()
+      if (!eventDate) return
+      const diff = eventDate.getTime() - Date.now()
       if (diff <= 0) return setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
       setTimeLeft({
         days: Math.floor(diff / 86400000),
@@ -26,7 +46,7 @@ function Countdown() {
     compute()
     const t = setInterval(compute, 1000)
     return () => clearInterval(t)
-  }, [])
+  }, [eventDate])
 
   return (
     <div className="flex items-center gap-3 justify-center">
@@ -55,7 +75,7 @@ const HOW_STEPS = [
   { icon: Ticket, n: '01', title: 'Choisissez', desc: 'Sélectionnez votre activité et votre créneau' },
   { icon: Shield, n: '02', title: 'Payez', desc: 'Paiement sécurisé en ligne via SumUp' },
   { icon: Clock, n: '03', title: 'Recevez', desc: 'Votre ticket avec QR code par email instantanément' },
-  { icon: MapPin, n: '04', title: 'Profitez', desc: 'Présentez votre QR code à l\'entrée et vivez l\'expérience' },
+  { icon: MapPin, n: '04', title: 'Profitez', desc: "Présentez votre QR code à l'entrée et vivez l'expérience" },
 ]
 
 function ContactForm() {
@@ -143,6 +163,7 @@ function ContactForm() {
 
 interface Props {
   activities: Activity[]
+  event: Event | null
 }
 
 function CartBanner() {
@@ -208,8 +229,13 @@ function CartBanner() {
   )
 }
 
-export function LandingClient({ activities }: Props) {
+export function LandingClient({ activities, event }: Props) {
   const activitiesRef = useRef<HTMLDivElement>(null)
+
+  const eventDate = event?.date_start ? new Date(event.date_start + 'T09:00:00') : null
+  const daysLabel = formatEventDaysBadge(event?.date_start ?? null, event?.date_end ?? null)
+  const datesLabel = formatEventDates(event?.date_start ?? null, event?.date_end ?? null)
+  const showClassement = event?.config?.chrono_enabled ?? false
 
   return (
     <main className="min-h-dvh">
@@ -236,13 +262,14 @@ export function LandingClient({ activities }: Props) {
           transition={{ duration: 0.6 }}
           className="relative z-10 max-w-md mx-auto"
         >
-          {/* Badge événement */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--accent)] mb-6">
-            <div className="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse" />
-            <span className="text-[var(--accent)] text-xs font-semibold uppercase tracking-widest">
-              Samedi & Dimanche
-            </span>
-          </div>
+          {daysLabel && (
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--accent)] mb-6">
+              <div className="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse" />
+              <span className="text-[var(--accent)] text-xs font-semibold uppercase tracking-widest">
+                {daysLabel}
+              </span>
+            </div>
+          )}
 
           <img
             src="/logo-easydrift.png"
@@ -250,15 +277,20 @@ export function LandingClient({ activities }: Props) {
             className="mx-auto mb-2"
             style={{ width: 'auto', height: 'auto', maxWidth: '320px', maxHeight: '100px', objectFit: 'contain', filter: 'drop-shadow(0 0 20px rgba(244,123,32,0.4))' }}
           />
-          <p className="font-bebas text-2xl text-[var(--text-secondary)] mb-2 tracking-widest">
-            JAPN CAR <span className="text-[var(--text-secondary)] text-lg">· 30/31 Mai 2026</span>
-          </p>
-          <p className="flex items-center justify-center gap-1.5 text-[var(--text-secondary)] text-sm mb-8">
-            <MapPin size={14} />
-            Circuit de Montlhéry
-          </p>
+          {event && (
+            <p className="font-bebas text-2xl text-[var(--text-secondary)] mb-2 tracking-widest">
+              {event.name.toUpperCase()}
+              {datesLabel && <span className="text-[var(--text-secondary)] text-lg"> · {datesLabel}</span>}
+            </p>
+          )}
+          {event?.location && (
+            <p className="flex items-center justify-center gap-1.5 text-[var(--text-secondary)] text-sm mb-8">
+              <MapPin size={14} />
+              {event.location}
+            </p>
+          )}
 
-          <Countdown />
+          {eventDate && <Countdown eventDate={eventDate} />}
 
           <motion.button
             onClick={() => activitiesRef.current?.scrollIntoView({ behavior: 'smooth' })}
@@ -291,7 +323,7 @@ export function LandingClient({ activities }: Props) {
             Choisissez votre <span className="text-[var(--accent)]">expérience</span>
           </h2>
           <p className="text-[var(--text-secondary)] text-sm mt-1">
-            3 activités disponibles pour vivre l'adrénaline de la dérive
+            {event?.site_content?.description || `${activities.length} activité${activities.length > 1 ? 's' : ''} disponible${activities.length > 1 ? 's' : ''} pour vivre l'adrénaline de la dérive`}
           </p>
         </div>
 
@@ -349,14 +381,18 @@ export function LandingClient({ activities }: Props) {
       {/* FOOTER */}
       <footer className="border-t border-[var(--border)] px-5 py-8 text-center">
         <img src="/logo-easydrift.png" alt="EASYDRIFT" className="h-12 w-auto mx-auto mb-2" />
-        <p className="text-[var(--text-secondary)] text-xs">JAPN Car • Circuit de Montlhéry</p>
+        <p className="text-[var(--text-secondary)] text-xs">
+          {event ? `${event.name}${event.location ? ` • ${event.location}` : ''}` : 'EASYDRIFT'}
+        </p>
 
-        <a
-          href="/classement"
-          className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-xl border border-yellow-500/40 bg-yellow-500/10 text-yellow-400 text-sm font-semibold hover:bg-yellow-500/20 transition-colors"
-        >
-          🏆 Classement Live — Session Conduite
-        </a>
+        {showClassement && (
+          <a
+            href="/classement"
+            className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-xl border border-yellow-500/40 bg-yellow-500/10 text-yellow-400 text-sm font-semibold hover:bg-yellow-500/20 transition-colors"
+          >
+            🏆 Classement Live — Session Conduite
+          </a>
+        )}
 
         <p className="text-[var(--text-secondary)] text-xs mt-4">
           Questions ? <a href="mailto:maxence.fortier@easydriftdts.com" className="text-[var(--accent)]">maxence.fortier@easydriftdts.com</a>
