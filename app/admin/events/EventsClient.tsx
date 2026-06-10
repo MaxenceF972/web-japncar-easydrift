@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, X, CheckCircle, Archive, Loader2, Calendar, MapPin, Settings2, ToggleLeft, ToggleRight, Trash2, Zap } from 'lucide-react'
+import { Plus, X, CheckCircle, Archive, Loader2, Calendar, MapPin, Settings2, ToggleLeft, ToggleRight, Trash2, Pencil, Check } from 'lucide-react'
 import { useEvent } from '@/contexts/EventContext'
 import type { Event, EventConfig, EventSiteContent } from '@/lib/supabase/types'
 
@@ -137,6 +137,9 @@ function EventConfigPanel({ event, onClose, onUpdated }: { event: Event; onClose
   const [showAddAct, setShowAddAct] = useState(false)
   const [actForm, setActForm] = useState({ label: '', price: '', type: 'scheduled', color: '#F47B20', capacity: '1' })
   const [savingAct, setSavingAct] = useState(false)
+  const [editingActId, setEditingActId] = useState<string | null>(null)
+  const [editActForm, setEditActForm] = useState({ label: '', price: '', type: 'scheduled', color: '#F47B20', capacity: '1' })
+  const [savingEdit, setSavingEdit] = useState(false)
 
   useEffect(() => {
     fetch(`/api/admin/activities?event_id=${event.id}`)
@@ -171,6 +174,35 @@ function EventConfigPanel({ event, onClose, onUpdated }: { event: Event; onClose
     if (!confirm('Supprimer cette activité ?')) return
     await fetch(`/api/admin/activities?id=${actId}`, { method: 'DELETE' })
     setActivities(prev => prev.filter((a: any) => a.id !== actId))
+  }
+
+  function startEditActivity(a: any) {
+    setEditingActId(a.id)
+    setEditActForm({ label: a.label, price: (a.price / 100).toFixed(2), type: a.type, color: a.color, capacity: String(a.capacity) })
+    setShowAddAct(false)
+  }
+
+  async function handleSaveActivity() {
+    if (!editingActId) return
+    setSavingEdit(true)
+    const resp = await fetch('/api/admin/activities', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: editingActId,
+        label: editActForm.label,
+        price: Math.round(parseFloat(editActForm.price || '0') * 100),
+        type: editActForm.type,
+        color: editActForm.color,
+        capacity: parseInt(editActForm.capacity) || 1,
+      }),
+    })
+    const data = await resp.json()
+    setSavingEdit(false)
+    if (resp.ok) {
+      setActivities(prev => prev.map((a: any) => a.id === editingActId ? data.activity : a))
+      setEditingActId(null)
+    }
   }
 
   async function handleSave() {
@@ -268,7 +300,58 @@ function EventConfigPanel({ event, onClose, onUpdated }: { event: Event; onClose
               </button>
             </div>
 
-            {activities.map((a: any) => (
+            {activities.map((a: any) => editingActId === a.id ? (
+              <div key={a.id} className="p-4 rounded-xl border border-[var(--accent)]/40 bg-[var(--accent)]/5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-[var(--accent)] uppercase tracking-widest">Modifier</p>
+                  <button onClick={() => setEditingActId(null)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                    <X size={14} />
+                  </button>
+                </div>
+                <div>
+                  <label className="text-xs text-[var(--text-secondary)] block mb-1">Nom affiché</label>
+                  <input className="input-field text-sm" value={editActForm.label}
+                    onChange={e => setEditActForm(f => ({ ...f, label: e.target.value }))} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-[var(--text-secondary)] block mb-1">Prix (€)</label>
+                    <input type="number" min="0" step="0.5" className="input-field text-sm"
+                      value={editActForm.price} onChange={e => setEditActForm(f => ({ ...f, price: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-[var(--text-secondary)] block mb-1">Capacité</label>
+                    <input type="number" min="1" className="input-field text-sm"
+                      value={editActForm.capacity} onChange={e => setEditActForm(f => ({ ...f, capacity: e.target.value }))} />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-[var(--text-secondary)] block mb-2">Type</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[{ v: 'scheduled', label: 'Créneaux' }, { v: 'walkin', label: 'Walk-in' }].map(({ v, label }) => (
+                      <button key={v} onClick={() => setEditActForm(f => ({ ...f, type: v }))}
+                        className={`py-2 rounded-xl text-xs font-medium border transition-colors ${editActForm.type === v ? 'bg-[var(--accent)] border-[var(--accent)] text-white' : 'bg-[var(--bg-elevated)] border-[var(--border)] text-[var(--text-secondary)]'}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-[var(--text-secondary)] block mb-2">Couleur</label>
+                  <div className="flex gap-2">
+                    {PRESET_COLORS.map(c => (
+                      <button key={c} onClick={() => setEditActForm(f => ({ ...f, color: c }))}
+                        className={`w-8 h-8 rounded-full border-2 transition-all ${editActForm.color === c ? 'border-white scale-110' : 'border-transparent'}`}
+                        style={{ backgroundColor: c }} />
+                    ))}
+                  </div>
+                </div>
+                <button onClick={handleSaveActivity} disabled={savingEdit || !editActForm.label}
+                  className="btn-cta w-full font-bebas text-sm py-2.5 disabled:opacity-40 flex items-center justify-center gap-2">
+                  {savingEdit ? <Loader2 size={14} className="animate-spin" /> : <><Check size={14} /> ENREGISTRER</>}
+                </button>
+              </div>
+            ) : (
               <div key={a.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)]">
                 <div className="flex items-center gap-2.5">
                   <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: a.color }} />
@@ -279,10 +362,16 @@ function EventConfigPanel({ event, onClose, onUpdated }: { event: Event; onClose
                     </p>
                   </div>
                 </div>
-                <button onClick={() => handleDeleteActivity(a.id)}
-                  className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-400 transition-colors">
-                  <Trash2 size={13} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => startEditActivity(a)}
+                    className="p-1.5 rounded-lg hover:bg-[var(--accent)]/10 text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">
+                    <Pencil size={13} />
+                  </button>
+                  <button onClick={() => handleDeleteActivity(a.id)}
+                    className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-400 transition-colors">
+                    <Trash2 size={13} />
+                  </button>
+                </div>
               </div>
             ))}
 

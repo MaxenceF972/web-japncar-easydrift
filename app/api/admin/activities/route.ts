@@ -36,20 +36,22 @@ export async function DELETE(req: NextRequest) {
   return NextResponse.json({ ok: true })
 }
 
-// Mettre à jour une activité (tarif, label, etc.)
 export async function PATCH(req: NextRequest) {
-  const { activityId, price } = await req.json() as { activityId: string; price: number }
-  if (!activityId) return NextResponse.json({ error: 'ID manquant' }, { status: 400 })
-  if (price === undefined || price < 0) return NextResponse.json({ error: 'Prix invalide' }, { status: 400 })
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = createServiceClient() as any
+  const body = await req.json()
+  const { id, label, price, type, color, capacity, description } = body
+  if (!id) return NextResponse.json({ error: 'ID manquant' }, { status: 400 })
+
+  const updates: Record<string, any> = {}
+  if (label !== undefined) updates.label = label
+  if (price !== undefined) updates.price = price
+  if (type !== undefined) updates.type = type
+  if (color !== undefined) updates.color = color
+  if (capacity !== undefined) updates.capacity = capacity
+  if (description !== undefined) updates.description = description
+
   const { data, error } = await supabase
-    .from('activities')
-    .update({ price })
-    .eq('id', activityId)
-    .select()
-    .single()
+    .from('activities').update(updates).eq('id', id).select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ activity: data })
