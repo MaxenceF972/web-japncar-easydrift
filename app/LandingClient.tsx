@@ -22,10 +22,17 @@ function formatEventDates(start: string | null, end: string | null): string {
 function formatEventDaysBadge(start: string | null, end: string | null): string {
   if (!start) return ''
   const DAYS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
+  const SHORT = ['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.']
   const s = new Date(start + 'T12:00:00')
-  if (!end || end === start) return DAYS[s.getDay()]
+  if (!end || end === start) {
+    const month = s.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
+    return `${DAYS[s.getDay()]} ${month}`
+  }
   const e = new Date(end + 'T12:00:00')
-  return `${DAYS[s.getDay()]} & ${DAYS[e.getDay()]}`
+  if (s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear()) {
+    return `${SHORT[s.getDay()]} ${s.getDate()} & ${SHORT[e.getDay()]} ${e.getDate()} ${s.toLocaleDateString('fr-FR', { month: 'long' })}`
+  }
+  return `${SHORT[s.getDay()]} ${s.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} & ${SHORT[e.getDay()]} ${e.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`
 }
 
 function Countdown({ eventDate }: { eventDate: Date | null }) {
@@ -280,7 +287,6 @@ export function LandingClient({ activities, event }: Props) {
           {event && (
             <p className="font-bebas text-2xl text-[var(--text-secondary)] mb-2 tracking-widest">
               {event.name.toUpperCase()}
-              {datesLabel && <span className="text-[var(--text-secondary)] text-lg"> · {datesLabel}</span>}
             </p>
           )}
           {event?.location && (
