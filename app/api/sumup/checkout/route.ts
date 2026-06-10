@@ -2,14 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSumUpCheckout } from '@/lib/sumup'
 import { createServiceClient } from '@/lib/supabase/server'
 import { generateTicketCode } from '@/lib/utils'
-import type { ActivityName } from '@/lib/supabase/types'
-
-const PRICES: Record<ActivityName, number> = {
-  bapteme: 5000,
-  conduite: 5000,
-  carbooling: 2500,
-}
-
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
@@ -23,8 +15,12 @@ export async function POST(req: NextRequest) {
     // Calcul du total : chaque slot peut avoir son propre prix (multi-activités)
     let totalAmount = 0
     for (const s of slots) {
-      const pricePerSlot = s.price ?? PRICES[activityName as ActivityName]
-      totalAmount += pricePerSlot
+      let pricePerSlot = s.price
+      if (pricePerSlot == null && s.activityId) {
+        const { data: act } = await supabase.from('activities').select('price').eq('id', s.activityId).single()
+        pricePerSlot = act?.price ?? 0
+      }
+      totalAmount += pricePerSlot ?? 0
     }
 
     // Vérifier disponibilité de tous les créneaux

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
-import { formatTime } from '@/lib/utils'
+import { formatTime, getDayLabel } from '@/lib/utils'
 import type { Activity, Slot, Booking } from '@/lib/supabase/types'
 import { BookingDrawer } from '@/components/admin/BookingDrawer'
 import { Plus, Users, Check, Trash2, X, Pencil } from 'lucide-react'
@@ -412,7 +412,7 @@ export function PlanningClient(_props: Props) {
                 <button onClick={() => setShowAddSlot(false)}><X size={18} className="text-[var(--text-secondary)]" /></button>
               </div>
               <p className="text-[var(--text-secondary)] text-xs mb-4">
-                {addTargetActivity?.label} · {selectedDay === 'saturday' ? 'Samedi' : 'Dimanche'}
+                {addTargetActivity?.label} · {getDayLabel(eventDays[selectedDayIdx] || '')}
               </p>
               <div className="space-y-3">
                 <div>

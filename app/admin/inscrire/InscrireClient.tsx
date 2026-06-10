@@ -60,8 +60,11 @@ export function InscrireClient(_props: Props) {
     })
   }
 
+  const isWalkin = selectedActivity?.type === 'walkin'
+
   async function handleSubmit() {
-    if (!selectedActivity || !selectedSlot) return
+    if (!selectedActivity) return
+    if (!isWalkin && !selectedSlot) return
     if (persons.some(p => !p.firstName.trim() || !p.lastName.trim())) {
       setSubmitError('Tous les prénoms et noms sont requis')
       return
@@ -72,24 +75,37 @@ export function InscrireClient(_props: Props) {
 
     try {
       for (const person of persons) {
+        const body = isWalkin
+          ? {
+              walkin: true,
+              event_id: selectedEvent?.id,
+              activityId: selectedActivity.id,
+              firstName: person.firstName.trim(),
+              lastName: person.lastName.trim(),
+              email: email.trim().toLowerCase() || '',
+              phone: phone.trim() || null,
+              paymentMode,
+              booked_by_admin: true,
+            }
+          : {
+              event_id: selectedEvent?.id,
+              activityId: selectedActivity.id,
+              activityName: selectedActivity.name,
+              slotId: selectedSlot!.id,
+              day: selectedSlot!.day,
+              startTime: selectedSlot!.start_time,
+              endTime: selectedSlot!.end_time,
+              firstName: person.firstName.trim(),
+              lastName: person.lastName.trim(),
+              email: email.trim().toLowerCase() || '',
+              phone: phone.trim() || null,
+              paymentMode,
+              booked_by_admin: true,
+            }
         const resp = await fetch('/api/bookings/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            event_id: selectedEvent?.id,
-            activityId: selectedActivity.id,
-            activityName: selectedActivity.name,
-            slotId: selectedSlot.id,
-            day: selectedSlot.day,
-            startTime: selectedSlot.start_time,
-            endTime: selectedSlot.end_time,
-            firstName: person.firstName.trim(),
-            lastName: person.lastName.trim(),
-            email: email.trim().toLowerCase() || '',
-            phone: phone.trim() || null,
-            paymentMode,
-            booked_by_admin: true,
-          }),
+          body: JSON.stringify(body),
         })
         const data = await resp.json()
         if (!resp.ok) throw new Error(data.error)
@@ -152,7 +168,7 @@ export function InscrireClient(_props: Props) {
             return (
               <button
                 key={activity.id}
-                onClick={() => { setSelectedActivity(activity); setStep(2) }}
+                onClick={() => { setSelectedActivity(activity); setStep(activity.type === 'walkin' ? 3 : 2) }}
                 className="w-full card p-4 text-left hover:border-[var(--accent)] transition-colors flex items-center justify-between"
                 style={{ borderLeft: `3px solid ${activity.color}` }}
               >
@@ -237,13 +253,15 @@ export function InscrireClient(_props: Props) {
       )}
 
       {/* Step 3 */}
-      {step === 3 && selectedActivity && selectedSlot && (
+      {step === 3 && selectedActivity && (isWalkin || selectedSlot) && (
         <div className="space-y-4">
           <div className="card p-4">
-            <p className="text-[var(--text-secondary)] text-xs mb-1">Réservation</p>
+            <p className="text-[var(--text-secondary)] text-xs mb-1">Inscription</p>
             <p className="font-semibold text-[var(--text-primary)]">{selectedActivity.label}</p>
             <p className="text-[var(--text-secondary)] text-sm">
-              {getDayLabel(selectedSlot.day)} · {formatTime(selectedSlot.start_time)} · {qty} personne{qty > 1 ? 's' : ''}
+              {isWalkin
+                ? 'Walk-in · Sans créneau'
+                : `${getDayLabel(selectedSlot!.day)} · ${formatTime(selectedSlot!.start_time)} · ${qty} personne${qty > 1 ? 's' : ''}`}
             </p>
           </div>
 

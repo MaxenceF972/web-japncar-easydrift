@@ -7,18 +7,65 @@ import { getSumUpCheckout, isSumUpPaymentSuccessful } from '@/lib/sumup'
 import { generateTicketCode } from '@/lib/utils'
 import { getResend, FROM_EMAIL } from '@/lib/resend'
 import { BookingConfirmationEmail } from '@/emails/BookingConfirmation'
-import type { ActivityName } from '@/lib/supabase/types'
-
-const PRICES: Record<ActivityName, number> = {
-  bapteme: 5000,
-  conduite: 5000,
-  carbooling: 2500,
-}
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const supabase = createServiceClient() as any
+
+    // ── Walk-in flow (activité sans créneaux) ───────────────────────────────
+    if (body.walkin) {
+      const { event_id, activityId, activityName, firstName, lastName, email, phone, paymentMode, booked_by_admin } = body
+
+      let paymentStatus: 'paid' | 'cash' | 'terminal' | 'free' | 'pending' = 'pending'
+      let amountPaid: number | null = null
+      if (paymentMode === 'cash' || paymentMode === 'terminal') {
+        paymentStatus = paymentMode
+        const { data: activity } = await supabase.from('activities').select('price').eq('id', activityId).single()
+        amountPaid = activity?.price ?? null
+      } else if (paymentMode === 'free') {
+        paymentStatus = 'free'
+        amountPaid = 0
+      }
+
+      const ticketCode = generateTicketCode()
+      const { data: booking, error: bookingError } = await supabase
+        .from('bookings')
+        .insert({
+          event_id: event_id || null,
+          slot_id: null,
+          activity_id: activityId,
+          first_name: firstName, last_name: lastName,
+          email: email?.toLowerCase() || '', phone: phone || null,
+          payment_status: paymentStatus, amount_paid: amountPaid,
+          ticket_code: ticketCode, booked_by_admin: booked_by_admin || false,
+        })
+        .select().single()
+
+      if (bookingError) return NextResponse.json({ error: 'Erreur création réservation' }, { status: 500 })
+
+      if (email && paymentStatus !== 'pending') {
+        try {
+          const { data: activity } = await supabase.from('activities').select('*').eq('id', activityId).single()
+          await getResend().emails.send({
+            from: FROM_EMAIL,
+            to: email,
+            subject: `Votre ticket EASYDRIFT - ${activity?.label}`,
+            react: BookingConfirmationEmail({
+              firstName, lastName, activityLabel: activity?.label || '',
+              day: '', startTime: '', endTime: '', ticketCode,
+              appUrl: process.env.NEXT_PUBLIC_APP_URL!,
+              bookingId: booking.id,
+            }),
+          })
+          await supabase.from('bookings').update({ ticket_sent_at: new Date().toISOString() }).eq('id', booking.id)
+        } catch (err) {
+          console.error('Email send error:', err)
+        }
+      }
+
+      return NextResponse.json({ bookingId: booking.id, bookingIds: [booking.id], ticketCode })
+    }
 
     // ── Admin single-slot flow (inscrire page) ──────────────────────────────
     if (body.slotId && !body.slots) {
@@ -33,7 +80,8 @@ export async function POST(req: NextRequest) {
 
       if (paymentMode === 'cash' || paymentMode === 'terminal') {
         paymentStatus = paymentMode
-        amountPaid = PRICES[activityName as ActivityName]
+        const { data: activityData } = await supabase.from('activities').select('price').eq('id', activityId).single()
+        amountPaid = activityData?.price ?? null
       } else if (paymentMode === 'free') {
         paymentStatus = 'free'
         amountPaid = 0
@@ -124,11 +172,10 @@ export async function POST(req: NextRequest) {
 
     for (const s of slots) {
       const slotActivityId = s.activityId || activityId
-      const slotActivityName = s.activityName || activityName
-      const slotPrice = s.price ?? PRICES[slotActivityName as ActivityName]
 
-      // Récupérer l'activité pour l'email
+      // Récupérer l'activité pour le prix et l'email
       const { data: activity } = await supabase.from('activities').select('*').eq('id', slotActivityId).single()
+      const slotPrice = s.price ?? activity?.price ?? null
 
       const { data: slot } = await supabase.from('slots').select('*').eq('id', s.slotId).single()
       if (!slot || slot.booked_count >= slot.capacity) {
