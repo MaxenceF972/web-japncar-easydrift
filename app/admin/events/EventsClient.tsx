@@ -135,10 +135,10 @@ function EventConfigPanel({ event, onClose, onUpdated }: { event: Event; onClose
   // Activités
   const [activities, setActivities] = useState<any[]>([])
   const [showAddAct, setShowAddAct] = useState(false)
-  const [actForm, setActForm] = useState({ label: '', price: '', type: 'scheduled', color: '#F47B20', capacity: '1' })
+  const [actForm, setActForm] = useState({ label: '', price: '', type: 'scheduled', color: '#F47B20', capacity: '1', description: '' })
   const [savingAct, setSavingAct] = useState(false)
   const [editingActId, setEditingActId] = useState<string | null>(null)
-  const [editActForm, setEditActForm] = useState({ label: '', price: '', type: 'scheduled', color: '#F47B20', capacity: '1' })
+  const [editActForm, setEditActForm] = useState({ label: '', price: '', type: 'scheduled', color: '#F47B20', capacity: '1', description: '' })
   const [savingEdit, setSavingEdit] = useState(false)
 
   useEffect(() => {
@@ -159,13 +159,14 @@ function EventConfigPanel({ event, onClose, onUpdated }: { event: Event; onClose
         price: Math.round(parseFloat(actForm.price || '0') * 100),
         type: actForm.type, color: actForm.color,
         capacity: parseInt(actForm.capacity) || 1,
+        description: actForm.description || null,
       }),
     })
     const data = await resp.json()
     setSavingAct(false)
     if (resp.ok) {
       setActivities(prev => [...prev, data.activity])
-      setActForm({ label: '', price: '', type: 'scheduled', color: '#F47B20', capacity: '1' })
+      setActForm({ label: '', price: '', type: 'scheduled', color: '#F47B20', capacity: '1', description: '' })
       setShowAddAct(false)
     }
   }
@@ -178,7 +179,7 @@ function EventConfigPanel({ event, onClose, onUpdated }: { event: Event; onClose
 
   function startEditActivity(a: any) {
     setEditingActId(a.id)
-    setEditActForm({ label: a.label, price: (a.price / 100).toFixed(2), type: a.type, color: a.color, capacity: String(a.capacity) })
+    setEditActForm({ label: a.label, price: (a.price / 100).toFixed(2), type: a.type, color: a.color, capacity: String(a.capacity), description: a.description || '' })
     setShowAddAct(false)
   }
 
@@ -195,6 +196,7 @@ function EventConfigPanel({ event, onClose, onUpdated }: { event: Event; onClose
         type: editActForm.type,
         color: editActForm.color,
         capacity: parseInt(editActForm.capacity) || 1,
+        description: editActForm.description || null,
       }),
     })
     const data = await resp.json()
@@ -346,6 +348,11 @@ function EventConfigPanel({ event, onClose, onUpdated }: { event: Event; onClose
                     ))}
                   </div>
                 </div>
+                <div>
+                  <label className="text-xs text-[var(--text-secondary)] block mb-1">Description</label>
+                  <textarea className="input-field text-sm resize-none" rows={3} placeholder="Décrivez l'activité..."
+                    value={editActForm.description} onChange={e => setEditActForm(f => ({ ...f, description: e.target.value }))} />
+                </div>
                 <button onClick={handleSaveActivity} disabled={savingEdit || !editActForm.label}
                   className="btn-cta w-full font-bebas text-sm py-2.5 disabled:opacity-40 flex items-center justify-center gap-2">
                   {savingEdit ? <Loader2 size={14} className="animate-spin" /> : <><Check size={14} /> ENREGISTRER</>}
@@ -419,6 +426,11 @@ function EventConfigPanel({ event, onClose, onUpdated }: { event: Event; onClose
                         style={{ backgroundColor: c }} />
                     ))}
                   </div>
+                </div>
+                <div>
+                  <label className="text-xs text-[var(--text-secondary)] block mb-1">Description</label>
+                  <textarea className="input-field text-sm resize-none" rows={3} placeholder="Décrivez l'activité..."
+                    value={actForm.description} onChange={e => setActForm(f => ({ ...f, description: e.target.value }))} />
                 </div>
                 <button onClick={handleAddActivity} disabled={savingAct || !actForm.label}
                   className="btn-cta w-full font-bebas text-sm py-2.5 disabled:opacity-40">
