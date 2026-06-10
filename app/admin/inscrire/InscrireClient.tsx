@@ -50,9 +50,10 @@ export function InscrireClient(_props: Props) {
   const [results, setResults] = useState<{ bookingId: string; ticketCode: string }[]>([])
 
   function changeQty(n: number) {
-    if (!selectedSlot) return
-    const available = selectedSlot.capacity - selectedSlot.booked_count
-    const next = Math.max(1, Math.min(n, available))
+    const walkin = selectedActivity?.type === 'walkin'
+    if (!walkin && !selectedSlot) return
+    const max = walkin ? 10 : selectedSlot!.capacity - selectedSlot!.booked_count
+    const next = Math.max(1, Math.min(n, max))
     setQty(next)
     setPersons(prev => {
       if (next > prev.length) return [...prev, ...Array(next - prev.length).fill({ firstName: '', lastName: '' })]
@@ -260,10 +261,30 @@ export function InscrireClient(_props: Props) {
             <p className="font-semibold text-[var(--text-primary)]">{selectedActivity.label}</p>
             <p className="text-[var(--text-secondary)] text-sm">
               {isWalkin
-                ? 'Walk-in · Sans créneau'
+                ? `Walk-in · ${qty} personne${qty > 1 ? 's' : ''}`
                 : `${getDayLabel(selectedSlot!.day)} · ${formatTime(selectedSlot!.start_time)} · ${qty} personne${qty > 1 ? 's' : ''}`}
             </p>
           </div>
+
+          {isWalkin && (
+            <div className="card p-4 space-y-3">
+              <p className="text-xs text-[var(--text-secondary)] font-semibold uppercase tracking-widest">Nombre de personnes</p>
+              <div className="flex items-center gap-4">
+                <button onClick={() => changeQty(qty - 1)} disabled={qty <= 1}
+                  className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)] flex items-center justify-center disabled:opacity-30">
+                  <Minus size={14} />
+                </button>
+                <span className="font-bebas text-2xl text-[var(--text-primary)] w-6 text-center">{qty}</span>
+                <button onClick={() => changeQty(qty + 1)} disabled={qty >= 10}
+                  className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)] flex items-center justify-center disabled:opacity-30">
+                  <Plus size={14} />
+                </button>
+              </div>
+              <p className="font-bebas text-xl text-[var(--accent)]">
+                Total : {formatPrice(qty * selectedActivity.price)}
+              </p>
+            </div>
+          )}
 
           {persons.map((p, i) => (
             <div key={i} className="card p-4">
