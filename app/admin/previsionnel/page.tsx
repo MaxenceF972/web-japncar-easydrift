@@ -80,7 +80,7 @@ export default function PrevisionnelPage() {
       })
 
     // Équipe
-    fetch('/api/admin/team').then(r => r.json()).then(d => setTeam(d.members || []))
+    fetch(`/api/admin/team?event_id=${selectedEvent.id}`).then(r => r.json()).then(d => setTeam(d.members || []))
   }, [selectedEvent?.id])
 
   async function handleSave() {
@@ -126,7 +126,8 @@ export default function PrevisionnelPage() {
   }
   async function addMember() {
     const m: TeamMember = { id: Date.now().toString(), nom: '', poste: '', samedi: true, dimanche: true }
-    await fetch('/api/admin/team', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...m, position: team.length }) })
+    const body = { ...m, event_id: selectedEvent?.id || null, position: team.length }
+    await fetch('/api/admin/team', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     setTeam(t => [...t, m]); startEdit(m)
   }
   async function toggleDay(id: string, day: 'samedi' | 'dimanche') {

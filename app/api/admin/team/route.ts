@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const supabase = createServiceClient() as any
-  const { data } = await supabase
-    .from('team_members')
-    .select('*')
-    .order('position')
+  const eventId = req.nextUrl.searchParams.get('event_id')
+  let query = supabase.from('team_members').select('*').order('position')
+  if (eventId) query = query.eq('event_id', eventId)
+  else query = query.is('event_id', null)
+  const { data } = await query
   return NextResponse.json({ members: data || [] })
 }
 
