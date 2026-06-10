@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback } from 'react'
-import { Search, Download, RefreshCw, Loader2 } from 'lucide-react'
+import { Search, Download, RefreshCw, Loader2, Trash2 } from 'lucide-react'
 import type { Booking } from '@/lib/supabase/types'
 import { formatTime, getDayLabel } from '@/lib/utils'
 import { BookingDrawer } from '@/components/admin/BookingDrawer'
@@ -27,6 +27,7 @@ export function ReservationsClient(_: Props) {
   const [filterCheckin, setFilterCheckin] = useState('all')
   const [filterDay, setFilterDay] = useState('all')
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const fetchBookings = useCallback(async () => {
     if (!selectedEvent) return
@@ -74,6 +75,15 @@ export function ReservationsClient(_: Props) {
       return true
     })
   }, [bookings, search, filterActivity, filterPayment, filterCheckin, filterDay])
+
+  async function handleDelete(id: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    if (!confirm('Supprimer cette réservation définitivement ?')) return
+    setDeletingId(id)
+    await fetch(`/api/admin/reservations?id=${id}`, { method: 'DELETE' })
+    setBookings(prev => prev.filter(b => b.id !== id))
+    setDeletingId(null)
+  }
 
   function handleExportCSV() {
     const headers = ['Prénom', 'Nom', 'Email', 'Téléphone', 'Activité', 'Jour', 'Heure', 'Paiement', 'Check-in', 'Ticket', 'Créé le']
@@ -170,7 +180,18 @@ export function ReservationsClient(_: Props) {
                   </p>
                   <p className="text-[var(--text-secondary)] text-xs mt-0.5 truncate">{booking.email}</p>
                 </div>
-                <span className={`badge ${PAYMENT_COLORS[booking.payment_status]} flex-shrink-0 mt-0.5`}>{PAYMENT_LABELS[booking.payment_status]}</span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className={`badge ${PAYMENT_COLORS[booking.payment_status]}`}>{PAYMENT_LABELS[booking.payment_status]}</span>
+                  <button
+                    onClick={e => handleDelete(booking.id, e)}
+                    disabled={deletingId === booking.id}
+                    className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-400 transition-colors disabled:opacity-40"
+                  >
+                    {deletingId === booking.id
+                      ? <Loader2 size={13} className="animate-spin" />
+                      : <Trash2 size={13} />}
+                  </button>
+                </div>
               </div>
             </button>
           )
