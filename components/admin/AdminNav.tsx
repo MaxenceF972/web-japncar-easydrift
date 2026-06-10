@@ -5,24 +5,21 @@ import { LayoutDashboard, Calendar, QrCode, List, UserPlus, BarChart3, LogOut, M
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
 import { useEvent } from '@/contexts/EventContext'
-import type { Event } from '@/lib/supabase/types'
+import type { Event, EventConfig } from '@/lib/supabase/types'
 
-const NAV_ITEMS = [
+const NAV_ITEMS: { href: string; icon: any; label: string; requires?: keyof EventConfig }[] = [
   { href: '/admin/dashboard',      icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/admin/events',         icon: CalendarDays,    label: 'Événements' },
   { href: '/admin/planning',       icon: Calendar,        label: 'Planning' },
   { href: '/admin/scanner',        icon: QrCode,          label: 'Scanner' },
   { href: '/admin/reservations',   icon: List,            label: 'Réservations' },
   { href: '/admin/inscrire',       icon: UserPlus,        label: 'Inscrire' },
-  { href: '/admin/chrono',         icon: Timer,           label: 'Chrono' },
+  { href: '/admin/chrono',         icon: Timer,           label: 'Chrono',   requires: 'chrono_enabled' },
   { href: '/admin/contacts',       icon: MessageSquare,   label: 'Contacts' },
-  { href: '/admin/videos',         icon: Video,           label: 'Vidéos' },
+  { href: '/admin/videos',         icon: Video,           label: 'Vidéos',   requires: 'video_enabled' },
   { href: '/admin/stats',          icon: BarChart3,       label: 'Stats' },
   { href: '/admin/previsionnel',   icon: TrendingUp,      label: 'Prévisionnel' },
 ]
-
-const MOBILE_PRIMARY = NAV_ITEMS.slice(2, 7) // Planning, Scanner, Réservations, Inscrire, Chrono
-const MOBILE_MORE    = [NAV_ITEMS[0], NAV_ITEMS[1], ...NAV_ITEMS.slice(7)]
 
 const STATUS_COLORS: Record<string, string> = {
   active:   'bg-green-500',
@@ -78,6 +75,18 @@ export function AdminNav() {
   const pathname = usePathname()
   const router   = useRouter()
   const [showMore, setShowMore] = useState(false)
+  const { selectedEvent } = useEvent()
+
+  function isVisible(item: typeof NAV_ITEMS[0]) {
+    if (!item.requires) return true
+    return !!selectedEvent?.config?.[item.requires]
+  }
+
+  const visibleItems = NAV_ITEMS.filter(isVisible)
+  const MOBILE_PRIMARY = visibleItems.filter(i =>
+    ['/admin/planning', '/admin/scanner', '/admin/reservations', '/admin/inscrire', '/admin/chrono'].includes(i.href)
+  ).slice(0, 4)
+  const MOBILE_MORE = visibleItems.filter(i => !MOBILE_PRIMARY.includes(i))
 
   async function handleLogout() {
     const supabase = createClient()
@@ -98,7 +107,7 @@ export function AdminNav() {
           <EventSwitcher />
         </div>
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {NAV_ITEMS.map(({ href, icon: Icon, label }) => (
+          {visibleItems.map(({ href, icon: Icon, label }) => (
             <a
               key={href}
               href={href}
